@@ -42,14 +42,27 @@ typst-notes graph
 
 ```bash
 typst-notes preview [path]
+typst-notes preview --follow
 typst-notes srs [--deck=NAME] [--all] [--port=3000]
 typst-notes graph [--port=3002]
+typst-notes lsp
 ```
 
 - `typst-notes preview` starts the live Typst preview UI
+- `typst-notes preview --follow` follows the file most recently reported by `typst-notes lsp`
 - `typst-notes srs` starts the spaced repetition UI
 - `typst-notes graph` starts the project graph UI
+- `typst-notes lsp` runs a tiny language server that tracks the active Typst file
 - SRS progress is stored in `.srs-progress.json` in the current working directory
+
+## Editor Tracking
+
+To make preview follow the file you are actively editing:
+
+1. Run `typst-notes lsp` as a language server in your editor for Typst files.
+2. Run `typst-notes preview --follow`.
+
+The preview will switch to the most recently opened, changed, or saved Typst file reported through that LSP connection.
 
 ## Flashcards
 

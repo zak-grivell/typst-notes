@@ -4,6 +4,7 @@
 result
 result-*
 .srs-progress.json
+.typst-notes/
 
 *.log
 *.tmp

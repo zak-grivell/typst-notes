@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { printGraphHelp, startGraphServer } from "./modes/graph.ts";
+import { printLspHelp, startLspServer } from "./modes/lsp.ts";
 import { printPreviewHelp, startPreviewServer } from "./modes/preview.ts";
 import { printSrsHelp, startSrsServer } from "./modes/srs.ts";
 
@@ -15,13 +16,16 @@ Commands:
   preview [path]           Browse and live-preview Typst notes
   srs [options]            Review flashcards with spaced repetition
   graph [options]          Explore project links as a graph
+  lsp                      Track active Typst file via LSP
   help                     Show this help message
 
 Examples:
   typst-notes preview
   typst-notes preview oose/state.typ
+  typst-notes preview --follow
   typst-notes srs --deck=oose --all
   typst-notes graph
+  typst-notes lsp
 `);
 }
 
@@ -44,8 +48,8 @@ async function main() {
       printPreviewHelp();
       return;
     }
-    const pathArg = args[1] && !args[1].startsWith("-") ? args[1] : undefined;
-    startPreviewServer(pathArg);
+    const pathArg = args.slice(1).find((arg) => !arg.startsWith("-"));
+    startPreviewServer(pathArg, args.includes("--follow"));
     return;
   }
 
@@ -60,6 +64,15 @@ async function main() {
       return;
     }
     await startGraphServer(args.slice(1));
+    return;
+  }
+
+  if (command === "lsp") {
+    if (args[1] === "--help" || args[1] === "-h") {
+      printLspHelp();
+      return;
+    }
+    await startLspServer(args.slice(1));
     return;
   }
 

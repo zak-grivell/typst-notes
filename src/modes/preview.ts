@@ -1,5 +1,6 @@
 import { watch } from "fs/promises";
 import { dirname } from "path";
+import { readActiveFileState } from "../lib/active-file.ts";
 import { openInBrowser } from "../lib/browser.ts";
 import { renderPage, renderBrand, escapeHtml } from "../lib/html.ts";
 import { collectTypFiles, listTypDirectory, normalizeRequestPath } from "../lib/project.ts";
@@ -263,6 +264,44 @@ function previewStyles() {
   `;
 }
 
+function followScript(currentPath: string, followActive: boolean) {
+  if (!followActive) {
+    return "";
+  }
+
+  return `
+    const CURRENT_PATH = ${JSON.stringify(currentPath)};
+    let lastActivePath = null;
+
+    async function syncActiveFile() {
+      try {
+        const response = await fetch('/api/active-file');
+        const state = await response.json();
+        const activePath = state.path ? '/' + state.path : '/';
+        if (lastActivePath === null) {
+          lastActivePath = activePath;
+          if (activePath !== CURRENT_PATH) {
+            window.location.replace(activePath);
+          }
+          return;
+        }
+
+        if (activePath !== lastActivePath) {
+          lastActivePath = activePath;
+          if (activePath !== CURRENT_PATH) {
+            window.location.replace(activePath);
+          }
+        }
+      } catch {
+        // Ignore transient polling errors.
+      }
+    }
+
+    setInterval(syncActiveFile, 700);
+    void syncActiveFile();
+  `;
+}
+
 function renderToolbar(subtitle: string, right: string) {
   return {
     toolbarLeft: renderBrand("preview", subtitle),
@@ -271,7 +310,7 @@ function renderToolbar(subtitle: string, right: string) {
   };
 }
 
-function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], files: string[]) {
+function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], files: string[], followActive: boolean) {
   const parentPath = urlPath === "/" ? null : urlPath.split("/").slice(0, -1).join("/") || "/";
   const items = [
     ...(parentPath ? [{ kind: "dir", href: parentPath, name: "..", desc: "Parent directory" }] : []),
@@ -289,11 +328,11 @@ function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], f
     })),
   ];
 
-  const toolbar = renderToolbar(dirPath || "/", `<span class="pill active">directory</span>`);
+  const toolbar = renderToolbar(dirPath || "/", `<span class="pill active">directory</span>${followActive ? '<span class="pill">follow</span>' : ''}`);
   return renderPage({
     title: `${dirPath || "/"} · typst-notes preview`,
     styles: previewStyles(),
-    scripts: searchScript(),
+    scripts: `${searchScript()}${followScript(urlPath, followActive)}`,
     ...toolbar,
     body: `<main class="page-body flush">
       <section class="panel directory-list">
@@ -311,9 +350,9 @@ function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], f
   });
 }
 
-function renderDocumentPage(filePath: string, svgs: string[], error: string | null) {
+function renderDocumentPage(filePath: string, svgs: string[], error: string | null, followActive: boolean) {
   const parentPath = "/" + filePath.split("/").slice(0, -1).join("/");
-  const toolbar = renderToolbar(filePath, `<a class="pill" href="${parentPath || "/"}">back</a><span class="pill active">${error ? "error" : `${svgs.length} page${svgs.length === 1 ? "" : "s"}`}</span>`);
+  const toolbar = renderToolbar(filePath, `<a class="pill" href="${parentPath || "/"}">back</a><span class="pill active">${error ? "error" : `${svgs.length} page${svgs.length === 1 ? "" : "s"}`}</span>${followActive ? '<span class="pill">follow</span>' : ''}`);
   return renderPage({
     title: `${filePath} · typst-notes preview`,
     styles: previewStyles(),
@@ -321,6 +360,7 @@ function renderDocumentPage(filePath: string, svgs: string[], error: string | nu
       const es = new EventSource('/events/reload');
       es.onmessage = (event) => { if (event.data === 'reload') location.reload(); };
       es.onerror = () => setTimeout(() => location.reload(), 1000);
+      ${followScript(`/${filePath}`, followActive)}
     `,
     ...toolbar,
     body: `<main class="page-body flush">
@@ -368,16 +408,17 @@ export function printPreviewHelp() {
 typst-notes preview
 
 Usage:
-  typst-notes preview [path]
+  typst-notes preview [path] [--follow]
 
 Examples:
   typst-notes preview
   typst-notes preview notes/main.typ
   typst-notes preview notes/
+  typst-notes preview --follow
 `);
 }
 
-export function startPreviewServer(initialTarget?: string) {
+export function startPreviewServer(initialTarget?: string, followActive = false) {
   const server = Bun.serve({
     port: 0,
     async fetch(req) {
@@ -390,6 +431,15 @@ export function startPreviewServer(initialTarget?: string) {
 
       if (pathname === "/api/files") {
         return Response.json(await collectTypFiles("."));
+      }
+
+      if (pathname === "/api/active-file") {
+        return Response.json(await readActiveFileState());
+      }
+
+      if (pathname === "/__active") {
+        const state = await readActiveFileState();
+        return Response.redirect(state.path ? `/${state.path}` : "/", 302);
       }
 
       if (pathname === "/events/reload") {
@@ -413,7 +463,7 @@ export function startPreviewServer(initialTarget?: string) {
 
       if (pathname === "/" || pathname === "") {
         const { dirs, files } = await listTypDirectory(".");
-        return new Response(renderDirectoryPage("/", "/", dirs, files), {
+        return new Response(renderDirectoryPage("/", "/", dirs, files, followActive), {
           headers: { "Content-Type": "text/html" },
         });
       }
@@ -424,7 +474,7 @@ export function startPreviewServer(initialTarget?: string) {
         if (await file.exists()) {
           const { svgs, error } = await compileFileToSvgPages(relativePath);
           watchFile(relativePath);
-          return new Response(renderDocumentPage(relativePath, svgs, error), {
+          return new Response(renderDocumentPage(relativePath, svgs, error, followActive), {
             headers: { "Content-Type": "text/html" },
           });
         }
@@ -432,7 +482,7 @@ export function startPreviewServer(initialTarget?: string) {
 
       const { dirs, files } = await listTypDirectory(relativePath);
       if (dirs.length > 0 || files.length > 0) {
-        return new Response(renderDirectoryPage(pathname, relativePath, dirs, files), {
+        return new Response(renderDirectoryPage(pathname, relativePath, dirs, files, followActive), {
           headers: { "Content-Type": "text/html" },
         });
       }
@@ -441,20 +491,20 @@ export function startPreviewServer(initialTarget?: string) {
       if (await Bun.file(withExtension).exists()) {
         const { svgs, error } = await compileFileToSvgPages(withExtension);
         watchFile(withExtension);
-        return new Response(renderDocumentPage(withExtension, svgs, error), {
+        return new Response(renderDocumentPage(withExtension, svgs, error, followActive), {
           headers: { "Content-Type": "text/html" },
         });
       }
 
       const root = await listTypDirectory(".");
-      return new Response(renderDirectoryPage("/", "/", root.dirs, root.files), {
+      return new Response(renderDirectoryPage("/", "/", root.dirs, root.files, followActive), {
         status: 404,
         headers: { "Content-Type": "text/html" },
       });
     },
   });
 
-  const initialPath = initialTarget ? `/${initialTarget}` : "/";
+  const initialPath = initialTarget ? `/${initialTarget}` : (followActive ? "/__active" : "/");
   const url = `http://localhost:${server.port}${initialPath}`;
 
   console.log(`\nTypst Notes Preview\n===================\nServer running at: http://localhost:${server.port}\nOpening: ${url}\n\nPress Ctrl+C to stop\n`);
