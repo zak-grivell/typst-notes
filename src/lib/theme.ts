@@ -55,6 +55,11 @@ export const sharedCss = `
     font: inherit;
   }
 
+  button,
+  select {
+    border: 0;
+  }
+
   .app-shell {
     min-height: 100vh;
   }
@@ -226,6 +231,11 @@ export const sharedCss = `
     padding: 26px 24px 40px;
   }
 
+  .page-body.flush {
+    max-width: none;
+    padding-top: 20px;
+  }
+
   .hero {
     display: flex;
     align-items: flex-end;
@@ -264,6 +274,15 @@ export const sharedCss = `
     padding: 18px 20px 0;
     color: ${theme.subtext0};
     font-size: 13px;
+  }
+
+  .toolbar-control {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid ${theme.surface1};
+    border-radius: 999px;
+    background: rgba(65, 69, 89, 0.85);
+    color: ${theme.text};
   }
 
   .empty-state {

@@ -5,16 +5,9 @@ import { theme } from "../lib/theme.ts";
 
 function graphStyles() {
   return `
-    .graph-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 20px;
-      min-height: calc(100vh - 92px);
-    }
-
     .graph-panel {
       position: relative;
-      min-height: 72vh;
+      min-height: calc(100vh - 126px);
       overflow: hidden;
     }
 
@@ -29,57 +22,17 @@ function graphStyles() {
         linear-gradient(180deg, rgba(35, 38, 52, 0.96), rgba(30, 32, 48, 0.96));
     }
 
-    .graph-sidebar {
-      padding: 18px;
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .stat-card {
-      padding: 14px;
-      border-radius: 14px;
-      background: ${theme.surface0};
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: 800;
-      color: ${theme.rosewater};
-    }
-
-    .stat-label {
-      margin-top: 6px;
-      color: ${theme.subtext0};
-      font-size: 12px;
-    }
-
-    .detail-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .detail-item {
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(65, 69, 89, 0.6);
-    }
-
     .graph-search-wrap {
       width: 100%;
     }
 
-    @media (max-width: 1100px) {
-      .graph-layout {
-        grid-template-columns: 1fr;
-      }
+    .graph-selection {
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
+    @media (max-width: 1100px) {
       .graph-panel {
         min-height: 60vh;
       }
@@ -93,39 +46,15 @@ function renderGraphHtml() {
     styles: graphStyles(),
     toolbarLeft: renderBrand("graph", "project links"),
     toolbarCenter: `<div class="graph-search-wrap"><input class="search" id="graph-search" placeholder="Focus a note..."></div>`,
-    toolbarRight: `<span class="pill active">obsidian-like graph</span>`,
-    body: `<main class="page-body">
-      <section class="hero">
-        <div>
-          <h1 class="hero-title">Project Graph</h1>
-          <p class="hero-subtitle">Explore local <code>./file.typ</code> and <code>../file.typ</code> links across your notes.</p>
-        </div>
-        <div class="meta-row">
-          <span class="pill">drag to pan</span>
-          <span class="pill">scroll to zoom</span>
-          <span class="pill">click a node to inspect</span>
-        </div>
-      </section>
-      <section class="graph-layout">
-        <section class="panel graph-panel"><canvas id="graph-canvas"></canvas></section>
-        <aside class="panel graph-sidebar">
-          <div class="panel-header">Project Stats</div>
-          <div class="stat-grid">
-            <div class="stat-card"><div class="stat-value" id="node-count">0</div><div class="stat-label">notes</div></div>
-            <div class="stat-card"><div class="stat-value" id="edge-count">0</div><div class="stat-label">links</div></div>
-          </div>
-          <div class="panel-header">Selection</div>
-          <div class="detail-list" id="selection-panel">
-            <div class="detail-item">Select a note to inspect its connections.</div>
-          </div>
-        </aside>
-      </section>
+    toolbarRight: `<span class="pill" id="node-count">0</span><span class="pill" id="edge-count">0</span><span class="pill graph-selection" id="selection-label">none</span>`,
+    body: `<main class="page-body flush">
+      <section class="panel graph-panel"><canvas id="graph-canvas"></canvas></section>
     </main>`,
     scripts: `
       const canvas = document.getElementById('graph-canvas');
       const context = canvas.getContext('2d');
       const searchInput = document.getElementById('graph-search');
-      const selectionPanel = document.getElementById('selection-panel');
+      const selectionLabel = document.getElementById('selection-label');
       let graph = { nodes: [], edges: [] };
       let state = {
         scale: 1,
@@ -176,17 +105,11 @@ function renderGraphHtml() {
       function updateSelection(node) {
         state.selected = node;
         if (!node) {
-          selectionPanel.innerHTML = '<div class="detail-item">Select a note to inspect its connections.</div>';
+          selectionLabel.textContent = 'none';
           return;
         }
 
-        const neighbors = graph.edges.filter((edge) => edge.source === node.id || edge.target === node.id);
-        selectionPanel.innerHTML = [
-          '<div class="detail-item"><strong>' + node.label + '</strong><div class="brand-subtitle">' + node.path + '</div></div>',
-          '<div class="detail-item">Inbound: ' + node.inbound + '</div>',
-          '<div class="detail-item">Outbound: ' + node.outbound + '</div>',
-          '<div class="detail-item">Connections: ' + neighbors.length + '</div>',
-        ].join('');
+        selectionLabel.textContent = node.path + ' · ' + node.degree;
       }
 
       function draw() {
@@ -287,8 +210,8 @@ function renderGraphHtml() {
           vy: 0,
           radius: 8 + Math.min(node.degree, 10),
         }));
-        document.getElementById('node-count').textContent = String(graph.nodes.length);
-        document.getElementById('edge-count').textContent = String(graph.edges.length);
+        document.getElementById('node-count').textContent = graph.nodes.length + ' notes';
+        document.getElementById('edge-count').textContent = graph.edges.length + ' links';
         draw();
       }
 

@@ -101,58 +101,12 @@ async function discoverFlashcards() {
 
 function srsStyles() {
   return `
-    .srs-layout {
-      display: grid;
-      grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-      gap: 20px;
-      min-height: calc(100vh - 92px);
-    }
-
-    .sidebar,
-    .review-panel {
-      min-height: 0;
-    }
-
-    .sidebar {
-      padding: 18px;
-    }
-
-    .deck-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .deck-button {
-      width: 100%;
-      border: 1px solid ${theme.surface0};
-      border-radius: 14px;
-      background: rgba(65, 69, 89, 0.65);
-      color: ${theme.text};
-      text-align: left;
-      padding: 12px 14px;
-      cursor: pointer;
-    }
-
-    .deck-button.active {
-      border-color: ${theme.blue};
-      box-shadow: 0 0 0 3px ${theme.blue}22;
-    }
-
     .review-panel {
       display: flex;
       flex-direction: column;
       min-height: 0;
       overflow: hidden;
-    }
-
-    .review-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 18px 20px 0;
+      min-height: calc(100vh - 126px);
     }
 
     .review-stage {
@@ -160,13 +114,13 @@ function srsStyles() {
       min-height: 0;
       display: flex;
       flex-direction: column;
-      padding: 20px;
-      gap: 16px;
+      padding: 12px;
+      gap: 12px;
     }
 
     .card-frame {
       flex: 1;
-      min-height: 320px;
+      min-height: 420px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -181,6 +135,11 @@ function srsStyles() {
       max-width: 100%;
       max-height: 100%;
       display: block;
+    }
+
+    .card-frame svg {
+      max-width: 100%;
+      height: auto;
     }
 
     .action-row {
@@ -226,10 +185,9 @@ function srsStyles() {
       transition: width 0.2s ease;
     }
 
-    @media (max-width: 980px) {
-      .srs-layout {
-        grid-template-columns: 1fr;
-      }
+    .srs-empty {
+      font-size: 14px;
+      color: ${theme.subtext0};
     }
   `;
 }
@@ -239,39 +197,16 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
     title: "typst-notes srs",
     styles: srsStyles(),
     toolbarLeft: renderBrand("srs", deckFilter || "all decks"),
-    toolbarCenter: `<span class="pill active">spaced repetition</span>`,
-    toolbarRight: `<span class="pill">progress in ${escapeHtml(PROGRESS_FILE)}</span>`,
+    toolbarCenter: `<select class="toolbar-control" id="deck-select"><option>Loading decks...</option></select>`,
+    toolbarRight: `<span class="pill" id="due-pill">0 due</span><span class="pill">${showAll ? "all" : "due"}</span>`,
     body: `<main class="page-body">
-      <section class="hero">
-        <div>
-          <h1 class="hero-title">Spaced Repetition</h1>
-          <p class="hero-subtitle">Requires the <code>flashcard(q, a)</code> helper from <code>setup.typ</code>.</p>
+      <section class="panel review-panel">
+        <div class="review-stage">
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          <div class="card-frame" id="card-frame"><div class="empty-state">Loading...</div></div>
+          <div class="action-row" id="action-row"></div>
+          <div class="hint" id="hint"><span class="kbd">Space</span> reveal <span class="kbd">1</span> again <span class="kbd">2</span> hard <span class="kbd">3</span> good <span class="kbd">4</span> easy</div>
         </div>
-        <div class="meta-row">
-          <span class="pill">${showAll ? "all cards" : "due cards only"}</span>
-          ${deckFilter ? `<span class="pill">deck ${escapeHtml(deckFilter)}</span>` : ""}
-        </div>
-      </section>
-      <section class="srs-layout">
-        <aside class="panel sidebar">
-          <div class="panel-header">Decks</div>
-          <div class="deck-list" id="deck-list"></div>
-        </aside>
-        <section class="panel review-panel">
-          <div class="review-header">
-            <div>
-              <div class="brand-title" id="session-title">Loading decks...</div>
-              <div class="brand-subtitle" id="session-meta">Discovering flashcards</div>
-            </div>
-            <span class="pill" id="due-pill">0 due</span>
-          </div>
-          <div class="review-stage">
-            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-            <div class="card-frame" id="card-frame"><div class="empty-state">Loading...</div></div>
-            <div class="action-row" id="action-row"></div>
-            <div class="hint" id="hint">Use <span class="kbd">Space</span> to reveal and <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span> <span class="kbd">4</span> to rate.</div>
-          </div>
-        </section>
       </section>
     </main>`,
     scripts: `
@@ -284,6 +219,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
       let showingAnswer = false;
       let sessionQueue = [];
       let sessionIndex = 0;
+      const deckSelect = document.getElementById('deck-select');
 
       async function loadData() {
         const [decksResponse, progressResponse] = await Promise.all([
@@ -314,37 +250,19 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
 
       function renderDecks() {
         const names = visibleDeckNames();
-        const list = document.getElementById('deck-list');
         if (names.length === 0) {
-          list.innerHTML = '<div class="empty-state">No flashcards found.</div>';
-          document.getElementById('card-frame').innerHTML = '<div class="empty-state">No flashcards were discovered. Make sure your notes use <code>flashcard(q, a)</code> from <code>setup.typ</code>.</div>';
+          deckSelect.innerHTML = '<option>No decks</option>';
+          document.getElementById('card-frame').innerHTML = '<div class="empty-state srs-empty">No flashcards found.</div>';
           document.getElementById('action-row').innerHTML = '';
           return;
         }
 
-        list.innerHTML = names.map((name) => {
-          const count = dueCards(name).length;
-          return '<button class="deck-button ' + (name === currentDeck ? 'active' : '') + '" data-deck="' + name + '">' +
-            '<div class="brand-title">' + name + '</div>' +
-            '<div class="brand-subtitle">' + count + ' cards ready</div>' +
-          '</button>';
-        }).join('');
-
         if (!currentDeck || !names.includes(currentDeck)) {
           currentDeck = names[0];
         }
-        bindDeckButtons();
+        deckSelect.innerHTML = names.map((name) => '<option value="' + name + '">' + name + '</option>').join('');
+        deckSelect.value = currentDeck;
         startSession();
-      }
-
-      function bindDeckButtons() {
-        document.querySelectorAll('[data-deck]').forEach((button) => {
-          button.addEventListener('click', () => {
-            currentDeck = button.dataset.deck;
-            document.querySelectorAll('[data-deck]').forEach((entry) => entry.classList.toggle('active', entry.dataset.deck === currentDeck));
-            startSession();
-          });
-        });
       }
 
       function startSession() {
@@ -361,9 +279,8 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
       function updateStats() {
         const total = sessionQueue.length;
         const done = Math.min(sessionIndex, total);
-        document.getElementById('session-title').textContent = currentDeck || 'No deck';
-        document.getElementById('session-meta').textContent = total === 0 ? 'Nothing due right now' : done + ' of ' + total + ' reviewed this session';
-        document.getElementById('due-pill').textContent = dueCards(currentDeck).length + ' due';
+        document.title = (currentDeck || 'srs') + ' · typst-notes srs';
+        document.getElementById('due-pill').textContent = done + '/' + total;
         document.getElementById('progress-fill').style.width = (total === 0 ? 0 : (done / total) * 100) + '%';
       }
 
@@ -375,7 +292,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
         if (!currentDeck || sessionQueue.length === 0 || sessionIndex >= sessionQueue.length) {
           currentCard = null;
           showingAnswer = false;
-          frame.innerHTML = '<div class="empty-state"><div class="hero-title" style="font-size:28px">Done</div><div class="hero-subtitle">No more cards to review in this deck.</div></div>';
+          frame.innerHTML = '<div class="empty-state srs-empty">Done</div>';
           actions.innerHTML = '';
           return;
         }
@@ -424,6 +341,11 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
           if (event.key === '3') rateCard(4);
           if (event.key === '4') rateCard(5);
         }
+      });
+
+      deckSelect.addEventListener('change', () => {
+        currentDeck = deckSelect.value;
+        startSession();
       });
 
       loadData();

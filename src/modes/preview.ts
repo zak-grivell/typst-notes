@@ -148,11 +148,6 @@ function searchScript() {
 
 function previewStyles() {
   return `
-    .directory-grid {
-      display: grid;
-      gap: 14px;
-    }
-
     .directory-list {
       padding: 12px;
     }
@@ -211,13 +206,13 @@ function previewStyles() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 24px;
+      gap: 18px;
     }
 
     .doc-page {
       position: relative;
       width: min(100%, 1100px);
-      padding: 18px;
+      padding: 12px;
       background: rgba(41, 44, 60, 0.75);
       border: 1px solid ${theme.surface0};
       border-radius: 18px;
@@ -250,6 +245,11 @@ function previewStyles() {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 13px;
       line-height: 1.6;
+    }
+
+    .preview-meta {
+      font-size: 13px;
+      color: ${theme.subtext0};
     }
   `;
 }
@@ -287,17 +287,6 @@ function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], f
     scripts: searchScript(),
     ...toolbar,
     body: `<main class="page-body">
-      <section class="hero">
-        <div>
-          <h1 class="hero-title">Preview</h1>
-          <p class="hero-subtitle">Browse Typst notes, follow local links, and jump into documents fast.</p>
-        </div>
-        <div class="meta-row">
-          <span class="pill">${dirs.length} dirs</span>
-          <span class="pill">${files.length} files</span>
-          <span class="pill"><span class="kbd">Ctrl</span><span class="kbd">K</span> search</span>
-        </div>
-      </section>
       <section class="panel directory-list">
         ${items.length === 0 ? `<div class="empty-state">No .typ files found in this directory.</div>` : items.map((item) => `
           <a class="directory-item ${item.kind}" href="${item.href}">
@@ -326,16 +315,7 @@ function renderDocumentPage(filePath: string, svgs: string[], error: string | nu
     `,
     ...toolbar,
     body: `<main class="page-body">
-      <section class="hero">
-        <div>
-          <h1 class="hero-title">${escapeHtml(filePath.split("/").pop() || filePath)}</h1>
-          <p class="hero-subtitle">Compiled from ${escapeHtml(filePath)} with live reload enabled.</p>
-        </div>
-        <div class="meta-row">
-          <span class="pill">link with <code>./file.typ</code></span>
-          <span class="pill">reload on save</span>
-        </div>
-      </section>
+      <div class="preview-meta">${escapeHtml(filePath)}</div>
       ${error ? `<section class="panel error-panel"><strong>Compile error</strong><pre>${escapeHtml(error)}</pre></section>` : `<section class="doc-stack">${svgs.map((svg, index) => `
         <div class="doc-page">
           <span class="pill doc-page-number">page ${index + 1}</span>

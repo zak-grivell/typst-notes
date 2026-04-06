@@ -79,7 +79,7 @@ export function extractTypstLinks(filePath: string, source: string): string[] {
 }
 
 export async function buildProjectGraph() {
-  const files = await collectTypFiles(".");
+  const files = (await collectTypFiles(".")).filter((file) => file !== "setup.typ");
   const fileSet = new Set(files);
   const inbound = new Map<string, number>();
   const outbound = new Map<string, number>();
