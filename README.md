@@ -69,6 +69,18 @@ Example:
 
 Without that helper, `typst-notes srs` will not discover any cards.
 
+## Example Project
+
+An example linked note set lives in `examples/design-patterns/`.
+
+Try it with:
+
+```bash
+typst-notes preview examples/design-patterns/index.typ
+typst-notes srs --deck=examples/design-patterns
+typst-notes graph
+```
+
 ## Graph View
 
 `typst-notes graph` builds a note graph by scanning local Typst files and extracting relative links like `./file.typ` and `../topic/file.typ`.
