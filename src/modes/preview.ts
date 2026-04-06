@@ -149,17 +149,22 @@ function searchScript() {
 function previewStyles() {
   return `
     .directory-list {
-      padding: 12px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
     }
 
     .directory-item {
       display: flex;
       align-items: center;
       gap: 14px;
-      padding: 14px 16px;
-      border-radius: 14px;
+      padding: 16px 22px;
+      border-radius: 0;
       text-decoration: none;
       color: ${theme.text};
+      border-bottom: 1px solid ${theme.surface0};
     }
 
     .directory-item:hover {
@@ -206,36 +211,39 @@ function previewStyles() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 0;
     }
 
     .doc-page {
       position: relative;
-      width: min(100%, 1100px);
-      padding: 12px;
-      background: rgba(41, 44, 60, 0.75);
-      border: 1px solid ${theme.surface0};
-      border-radius: 18px;
+      width: 100%;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
     }
 
     .doc-page svg {
       display: block;
       width: 100%;
       height: auto;
-      border-radius: 10px;
       background: white;
     }
 
     .doc-page-number {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 16px;
+      right: 16px;
     }
 
     .error-panel {
-      padding: 20px;
+      padding: 20px 22px;
       border: 1px solid ${theme.red};
       color: ${theme.maroon};
+      border-radius: 0;
+      border-left: 0;
+      border-right: 0;
+      box-shadow: none;
     }
 
     .error-panel pre {
@@ -250,6 +258,7 @@ function previewStyles() {
     .preview-meta {
       font-size: 13px;
       color: ${theme.subtext0};
+      padding: 10px 22px;
     }
   `;
 }
@@ -286,7 +295,7 @@ function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], f
     styles: previewStyles(),
     scripts: searchScript(),
     ...toolbar,
-    body: `<main class="page-body">
+    body: `<main class="page-body flush">
       <section class="panel directory-list">
         ${items.length === 0 ? `<div class="empty-state">No .typ files found in this directory.</div>` : items.map((item) => `
           <a class="directory-item ${item.kind}" href="${item.href}">
@@ -314,7 +323,7 @@ function renderDocumentPage(filePath: string, svgs: string[], error: string | nu
       es.onerror = () => setTimeout(() => location.reload(), 1000);
     `,
     ...toolbar,
-    body: `<main class="page-body">
+    body: `<main class="page-body flush">
       <div class="preview-meta">${escapeHtml(filePath)}</div>
       ${error ? `<section class="panel error-panel"><strong>Compile error</strong><pre>${escapeHtml(error)}</pre></section>` : `<section class="doc-stack">${svgs.map((svg, index) => `
         <div class="doc-page">

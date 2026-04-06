@@ -106,7 +106,11 @@ function srsStyles() {
       flex-direction: column;
       min-height: 0;
       overflow: hidden;
-      min-height: calc(100vh - 126px);
+      height: 100%;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
     .review-stage {
@@ -114,32 +118,31 @@ function srsStyles() {
       min-height: 0;
       display: flex;
       flex-direction: column;
-      padding: 12px;
-      gap: 12px;
+      padding: 0;
+      gap: 0;
     }
 
     .card-frame {
       flex: 1;
-      min-height: 420px;
+      min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid ${theme.surface0};
-      border-radius: 18px;
-      background: rgba(35, 38, 52, 0.9);
-      overflow: auto;
-      padding: 24px;
+      overflow: hidden;
+      padding: 0;
     }
 
     .card-frame img {
-      max-width: 100%;
-      max-height: 100%;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
       display: block;
     }
 
     .card-frame svg {
-      max-width: 100%;
-      height: auto;
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
     .action-row {
@@ -147,6 +150,7 @@ function srsStyles() {
       justify-content: center;
       gap: 10px;
       flex-wrap: wrap;
+      padding: 12px 16px;
     }
 
     .action-btn {
@@ -169,11 +173,12 @@ function srsStyles() {
       text-align: center;
       color: ${theme.subtext0};
       font-size: 13px;
+      padding: 0 16px 12px;
     }
 
     .progress-track {
       height: 8px;
-      border-radius: 999px;
+      border-radius: 0;
       background: ${theme.surface0};
       overflow: hidden;
     }
@@ -199,7 +204,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
     toolbarLeft: renderBrand("srs", deckFilter || "all decks"),
     toolbarCenter: `<select class="toolbar-control" id="deck-select"><option>Loading decks...</option></select>`,
     toolbarRight: `<span class="pill" id="due-pill">0 due</span><span class="pill">${showAll ? "all" : "due"}</span>`,
-    body: `<main class="page-body">
+    body: `<main class="page-body flush">
       <section class="panel review-panel">
         <div class="review-stage">
           <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>

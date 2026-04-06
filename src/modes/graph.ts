@@ -7,8 +7,11 @@ function graphStyles() {
   return `
     .graph-panel {
       position: relative;
-      min-height: calc(100vh - 126px);
+      height: 100%;
       overflow: hidden;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
     }
 
     #graph-canvas {
@@ -30,12 +33,6 @@ function graphStyles() {
       max-width: 320px;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    @media (max-width: 1100px) {
-      .graph-panel {
-        min-height: 60vh;
-      }
     }
   `;
 }
@@ -208,7 +205,7 @@ function renderGraphHtml() {
           y: Math.sin(index) * 180 + (Math.random() - 0.5) * 60,
           vx: 0,
           vy: 0,
-          radius: 8 + Math.min(node.degree, 10),
+          radius: 12 + Math.min(node.degree * 1.5, 18),
         }));
         document.getElementById('node-count').textContent = graph.nodes.length + ' notes';
         document.getElementById('edge-count').textContent = graph.edges.length + ' links';

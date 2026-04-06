@@ -62,6 +62,8 @@ export const sharedCss = `
 
   .app-shell {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
   .toolbar {
@@ -226,14 +228,13 @@ export const sharedCss = `
   }
 
   .page-body {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 26px 24px 40px;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
   }
 
   .page-body.flush {
-    max-width: none;
-    padding-top: 20px;
+    padding: 0;
   }
 
   .hero {
@@ -268,6 +269,7 @@ export const sharedCss = `
     border-radius: 18px;
     background: rgba(41, 44, 60, 0.82);
     box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+    min-height: 0;
   }
 
   .panel-header {
