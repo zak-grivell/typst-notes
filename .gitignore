@@ -1,0 +1,17 @@
+.direnv/
+.envrc.local
+
+result
+result-*
+
+*.log
+*.tmp
+*.swp
+*.swo
+
+.DS_Store
+
+node_modules/
+
+.idea/
+.vscode/
