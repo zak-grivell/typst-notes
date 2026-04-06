@@ -7,6 +7,7 @@ function graphStyles() {
   return `
     .graph-panel {
       position: relative;
+      flex: 1;
       height: 100%;
       overflow: hidden;
       border: 0;

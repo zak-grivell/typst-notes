@@ -36,6 +36,7 @@ export const sharedCss = `
 
   html {
     scroll-behavior: smooth;
+    height: 100%;
   }
 
   body {
@@ -43,6 +44,8 @@ export const sharedCss = `
     background: linear-gradient(180deg, ${theme.base} 0%, ${theme.crust} 100%);
     color: ${theme.text};
     min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
   }
 
   a {
@@ -62,8 +65,10 @@ export const sharedCss = `
 
   .app-shell {
     min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .toolbar {
@@ -231,6 +236,7 @@ export const sharedCss = `
     flex: 1;
     min-height: 0;
     width: 100%;
+    overflow: hidden;
   }
 
   .page-body.flush {

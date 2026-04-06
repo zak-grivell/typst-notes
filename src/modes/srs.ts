@@ -104,6 +104,7 @@ function srsStyles() {
     .review-panel {
       display: flex;
       flex-direction: column;
+      flex: 1;
       min-height: 0;
       overflow: hidden;
       height: 100%;
@@ -115,6 +116,7 @@ function srsStyles() {
 
     .review-stage {
       flex: 1;
+      height: 100%;
       min-height: 0;
       display: flex;
       flex-direction: column;
@@ -125,6 +127,7 @@ function srsStyles() {
     .card-frame {
       flex: 1;
       min-height: 0;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -147,6 +150,7 @@ function srsStyles() {
 
     .action-row {
       display: flex;
+      flex-shrink: 0;
       justify-content: center;
       gap: 10px;
       flex-wrap: wrap;
@@ -170,6 +174,7 @@ function srsStyles() {
     .action-btn.easy { background: ${theme.sky}; }
 
     .hint {
+      flex-shrink: 0;
       text-align: center;
       color: ${theme.subtext0};
       font-size: 13px;
@@ -177,6 +182,7 @@ function srsStyles() {
     }
 
     .progress-track {
+      flex-shrink: 0;
       height: 8px;
       border-radius: 0;
       background: ${theme.surface0};
