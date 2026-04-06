@@ -3,6 +3,7 @@ import { dirname } from "path";
 import { readActiveFileState } from "../lib/active-file.ts";
 import { openInBrowser } from "../lib/browser.ts";
 import { renderPage, renderBrand, escapeHtml } from "../lib/html.ts";
+import { clearPreviewServerState, writePreviewServerState } from "../lib/preview-state.ts";
 import { collectTypFiles, listTypDirectory, normalizeRequestPath } from "../lib/project.ts";
 import { theme } from "../lib/theme.ts";
 import { compileFileToSvgPages } from "../lib/typst.ts";
@@ -506,6 +507,26 @@ export function startPreviewServer(initialTarget?: string, followActive = false)
 
   const initialPath = initialTarget ? `/${initialTarget}` : (followActive ? "/__active" : "/");
   const url = `http://localhost:${server.port}${initialPath}`;
+
+  void writePreviewServerState({
+    pid: process.pid,
+    url: `http://localhost:${server.port}`,
+    followActive,
+    updatedAt: Date.now(),
+  });
+
+  const cleanup = () => {
+    void clearPreviewServerState();
+  };
+  process.on("exit", cleanup);
+  process.on("SIGINT", () => {
+    cleanup();
+    process.exit(0);
+  });
+  process.on("SIGTERM", () => {
+    cleanup();
+    process.exit(0);
+  });
 
   console.log(`\nTypst Notes Preview\n===================\nServer running at: http://localhost:${server.port}\nOpening: ${url}\n\nPress Ctrl+C to stop\n`);
   void openInBrowser(url);

@@ -60,7 +60,7 @@ typst-notes lsp
 To make preview follow the file you are actively editing:
 
 1. Run `typst-notes lsp` as a language server in your editor for Typst files.
-2. Run `typst-notes preview --follow`.
+2. The language server will start `typst-notes preview --follow` automatically.
 
 The preview will switch to the most recently opened, changed, or saved Typst file reported through that LSP connection.
 

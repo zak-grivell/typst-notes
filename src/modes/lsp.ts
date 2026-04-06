@@ -1,4 +1,5 @@
 import { pathFromDocumentUri, writeActiveFileState } from "../lib/active-file.ts";
+import { isPidRunning, readPreviewServerState } from "../lib/preview-state.ts";
 
 type JsonRpcRequest = {
   id?: string | number;
@@ -52,6 +53,29 @@ export async function startLspServer(args: string[]) {
 
   let shutdownRequested = false;
   let buffer = Buffer.alloc(0);
+  let previewStarted = false;
+
+  async function ensurePreviewRunning() {
+    if (previewStarted || process.env.TYPST_NOTES_NO_OPEN === "1") {
+      return;
+    }
+
+    const current = await readPreviewServerState();
+    if (current && current.followActive && isPidRunning(current.pid)) {
+      previewStarted = true;
+      return;
+    }
+
+    const command = [process.argv[0], process.argv[1], "preview", "--follow"];
+    const proc = Bun.spawn(command, {
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+      detached: true,
+    });
+    proc.unref();
+    previewStarted = true;
+  }
 
   process.stdin.on("data", (chunk: Buffer) => {
     buffer = Buffer.concat([buffer, chunk]);
@@ -93,6 +117,7 @@ export async function startLspServer(args: string[]) {
   async function handleMessage(message: JsonRpcRequest) {
     switch (message.method) {
       case "initialize":
+        await ensurePreviewRunning();
         sendResponse(message.id, {
           capabilities: {
             textDocumentSync: 1,
