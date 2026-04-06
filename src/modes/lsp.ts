@@ -1,4 +1,5 @@
 import { pathFromDocumentUri, writeActiveFileState } from "../lib/active-file.ts";
+import { openInBrowser } from "../lib/browser.ts";
 import { isPidRunning, readPreviewServerState } from "../lib/preview-state.ts";
 
 type JsonRpcRequest = {
@@ -62,6 +63,7 @@ export async function startLspServer(args: string[]) {
 
     const current = await readPreviewServerState();
     if (current && current.followActive && isPidRunning(current.pid)) {
+      void openInBrowser(`${current.url}/__active`);
       previewStarted = true;
       return;
     }
