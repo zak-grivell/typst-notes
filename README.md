@@ -13,20 +13,20 @@ You should review anything you run or publish from this repository yourself. The
 ## Run without installing
 
 ```bash
-nix run github:<owner>/typst-notes
+nix run github:zak-grivell/typst-notes
 ```
 
 Open a specific file or directory:
 
 ```bash
-nix run github:<owner>/typst-notes -- notes/main.typ
-nix run github:<owner>/typst-notes -- notes/
+nix run github:zak-grivell/typst-notes -- notes/main.typ
+nix run github:zak-grivell/typst-notes -- notes/
 ```
 
 ## Install with Nix
 
 ```bash
-nix profile install github:<owner>/typst-notes
+nix profile install github:zak-grivell/typst-notes
 ```
 
 Then run:
@@ -42,7 +42,7 @@ Point another flake at this repository and use the exported package:
 
 ```nix
 {
-  inputs.typst-notes.url = "github:<owner>/typst-notes";
+  inputs.typst-notes.url = "github:zak-grivell/typst-notes";
 
   outputs = { self, nixpkgs, typst-notes, ... }: {
     nixosConfigurations.my-host = nixpkgs.lib.nixosSystem {
