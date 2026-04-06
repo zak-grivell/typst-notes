@@ -335,7 +335,7 @@ function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], f
     styles: previewStyles(),
     scripts: `${searchScript()}${followScript(urlPath, followActive)}`,
     ...toolbar,
-    body: `<main class="page-body flush">
+    body: `<main class="page-body flush scrollable">
       <section class="panel directory-list">
         ${items.length === 0 ? `<div class="empty-state">No .typ files found in this directory.</div>` : items.map((item) => `
           <a class="directory-item ${item.kind}" href="${item.href}">
@@ -364,7 +364,7 @@ function renderDocumentPage(filePath: string, svgs: string[], error: string | nu
       ${followScript(`/${filePath}`, followActive)}
     `,
     ...toolbar,
-    body: `<main class="page-body flush">
+    body: `<main class="page-body flush scrollable">
       <div class="preview-meta">${escapeHtml(filePath)}</div>
       ${error ? `<section class="panel error-panel"><strong>Compile error</strong><pre>${escapeHtml(error)}</pre></section>` : `<section class="doc-stack">${svgs.map((svg, index) => `
         <div class="doc-page">

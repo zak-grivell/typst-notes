@@ -243,6 +243,10 @@ export const sharedCss = `
     padding: 0;
   }
 
+  .page-body.scrollable {
+    overflow: auto;
+  }
+
   .hero {
     display: flex;
     align-items: flex-end;
