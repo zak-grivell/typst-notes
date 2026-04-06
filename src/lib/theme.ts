@@ -45,7 +45,6 @@ export const sharedCss = `
     color: ${theme.text};
     min-height: 100vh;
     height: 100%;
-    overflow: hidden;
   }
 
   a {
