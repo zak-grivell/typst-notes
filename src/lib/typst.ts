@@ -100,7 +100,7 @@ function renderTypstSource(content: string): string {
   return `
 #let fold-fn(a, b) = a + b
 #let fake-sequence(..args) = args.pos().fold([], fold-fn)
-#set page(width: auto, height: auto, margin: 10pt)
+#set page(width: 160mm, height: 100mm, margin: 10pt)
 #import "setup.typ": *
 #show: setup.with()
 

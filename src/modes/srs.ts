@@ -28,6 +28,8 @@ type Flashcard = {
   a: string;
 };
 
+type FlashcardSide = "question" | "answer";
+
 const PROGRESS_FILE = ".srs-progress.json";
 
 async function loadProgress(): Promise<ProgressData> {
@@ -97,6 +99,10 @@ async function discoverFlashcards() {
   }
 
   return decks;
+}
+
+function flashcardUrl(card: Flashcard, side: FlashcardSide) {
+  return `/flashcard/${card.deck}/${card.id}/${side}`;
 }
 
 function srsStyles() {
@@ -231,6 +237,34 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
       let sessionQueue = [];
       let sessionIndex = 0;
       const deckSelect = document.getElementById('deck-select');
+      const preloaded = new Set();
+
+      function preloadUrl(url) {
+        if (!url || preloaded.has(url)) {
+          return;
+        }
+
+        preloaded.add(url);
+        const img = new Image();
+        img.src = url;
+      }
+
+      function preloadCard(card) {
+        if (!card) {
+          return;
+        }
+
+        preloadUrl('/flashcard/' + card.deck + '/' + card.id + '/question');
+        preloadUrl('/flashcard/' + card.deck + '/' + card.id + '/answer');
+      }
+
+      function warmUpcomingCards() {
+        if (currentCard) {
+          preloadUrl('/flashcard/' + currentCard.deck + '/' + currentCard.id + '/answer');
+        }
+
+        preloadCard(sessionQueue[sessionIndex + 1]);
+      }
 
       async function loadData() {
         const [decksResponse, progressResponse] = await Promise.all([
@@ -313,6 +347,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
         frame.innerHTML = '<img src="/flashcard/' + currentCard.deck + '/' + currentCard.id + '/question" alt="Question">';
         actions.innerHTML = '<button class="action-btn show" id="show-answer">Show Answer</button>';
         document.getElementById('show-answer').addEventListener('click', showAnswer);
+        warmUpcomingCards();
       }
 
       function showAnswer() {
@@ -328,6 +363,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
         document.querySelectorAll('[data-quality]').forEach((button) => {
           button.addEventListener('click', () => rateCard(Number(button.dataset.quality)));
         });
+        warmUpcomingCards();
       }
 
       async function rateCard(quality) {
@@ -406,6 +442,31 @@ export async function startSrsServer(args: string[]) {
     }
   }
 
+  const svgCache = new Map<string, Promise<string>>();
+
+  function getFlashcardSvg(card: Flashcard, side: FlashcardSide) {
+    const key = `${card.id}:${side}`;
+    const cached = svgCache.get(key);
+    if (cached) {
+      return cached;
+    }
+
+    const promise = renderMarkupToSvg(side === "question" ? card.q : card.a).catch((error) => {
+      svgCache.delete(key);
+      throw error;
+    });
+    svgCache.set(key, promise);
+    return promise;
+  }
+
+  function preloadFlashcard(card: Flashcard | undefined, side: FlashcardSide) {
+    if (!card) {
+      return;
+    }
+
+    void getFlashcardSvg(card, side);
+  }
+
   const server = Bun.serve({
     port,
     async fetch(req) {
@@ -455,7 +516,8 @@ export async function startSrsServer(args: string[]) {
         }
 
         try {
-          const svg = await renderMarkupToSvg(side === "question" ? card.q : card.a);
+          preloadFlashcard(card, side === "question" ? "answer" : "question");
+          const svg = await getFlashcardSvg(card, side as FlashcardSide);
           return new Response(svg, {
             headers: { "Content-Type": "image/svg+xml" },
           });
