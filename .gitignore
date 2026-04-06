@@ -3,6 +3,7 @@
 
 result
 result-*
+.srs-progress.json
 
 *.log
 *.tmp

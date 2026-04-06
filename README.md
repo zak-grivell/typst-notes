@@ -1,8 +1,10 @@
 # typst-notes
 
-`typst-notes` is a small live Typst preview server. It serves a browsable view of your `.typ` files, compiles them to SVG on demand, and reloads when files change.
+`typst-notes` is a Typst notes toolkit with three modes: preview, spaced repetition, and graph view. It browses `.typ` files, compiles them to SVG on demand, reviews flashcards extracted from your notes, and visualizes links across the project.
 
-It also works well with links between local Typst files. If you write links like `./file.typ`, you can jump between notes in the browser in a way that feels similar to Obsidian-style note navigation.
+The preview and graph modes work well with links between local Typst files. If you write links like `./file.typ` or `../file.typ`, you can jump between notes in the browser and see their relationships in an Obsidian-like graph.
+
+For spaced repetition, your notes must use the `flashcard(q, a)` helper from `setup.typ`. The SRS mode discovers cards by querying the `<flashcard>` metadata emitted by that function, so that setup is required.
 
 ## Disclaimer
 
@@ -13,14 +15,12 @@ You should review anything you run or publish from this repository yourself. The
 ## Run without installing
 
 ```bash
-nix run github:zak-grivell/typst-notes
-```
-
-Open a specific file or directory:
-
-```bash
-nix run github:zak-grivell/typst-notes -- notes/main.typ
-nix run github:zak-grivell/typst-notes -- notes/
+nix run github:zak-grivell/typst-notes -- preview
+nix run github:zak-grivell/typst-notes -- preview notes/main.typ
+nix run github:zak-grivell/typst-notes -- preview notes/
+nix run github:zak-grivell/typst-notes -- srs
+nix run github:zak-grivell/typst-notes -- srs --deck=oose --all
+nix run github:zak-grivell/typst-notes -- graph
 ```
 
 ## Install with Nix
@@ -32,9 +32,52 @@ nix profile install github:zak-grivell/typst-notes
 Then run:
 
 ```bash
-typst-notes
-typst-notes notes/main.typ
+typst-notes preview
+typst-notes preview notes/main.typ
+typst-notes srs
+typst-notes graph
 ```
+
+## CLI
+
+```bash
+typst-notes preview [path]
+typst-notes srs [--deck=NAME] [--all] [--port=3000]
+typst-notes graph [--port=3002]
+```
+
+- `typst-notes preview` starts the live Typst preview UI
+- `typst-notes srs` starts the spaced repetition UI
+- `typst-notes graph` starts the project graph UI
+- SRS progress is stored in `.srs-progress.json` in the current working directory
+
+## Flashcards
+
+To use spaced repetition, import and use the `flashcard(q, a)` helper from `setup.typ`.
+
+Example:
+
+```typst
+#import "setup.typ": *
+#show: setup.with()
+
+#flashcard(
+  [What is a monoid?],
+  [A set with an associative binary operation and an identity element.],
+)
+```
+
+Without that helper, `typst-notes srs` will not discover any cards.
+
+## Graph View
+
+`typst-notes graph` builds a note graph by scanning local Typst files and extracting relative links like `./file.typ` and `../topic/file.typ`.
+
+It is intended to feel similar to an Obsidian graph for a Typst project:
+
+- linked notes appear as connected nodes
+- denser notes appear larger
+- you can pan, zoom, search, and inspect connections
 
 ## Install from a flake input
 
@@ -85,11 +128,14 @@ nix develop
 Run the script directly while working on it:
 
 ```bash
-bun view.ts
+bun src/cli.ts help
+bun src/cli.ts preview
+bun src/cli.ts srs
+bun src/cli.ts graph
 ```
 
 If you do not want the app to try opening a browser automatically:
 
 ```bash
-TYPST_NOTES_NO_OPEN=1 typst-notes
+TYPST_NOTES_NO_OPEN=1 typst-notes preview
 ```
