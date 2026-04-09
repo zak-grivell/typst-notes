@@ -148,9 +148,14 @@ function renderGraphHtml() {
       }
 
       function tick() {
+        const centerX = 0;
+        const centerY = 0;
+
         for (const node of graph.nodes) {
-          node.vx *= 0.92;
-          node.vy *= 0.92;
+          node.vx *= 0.82;
+          node.vy *= 0.82;
+          node.vx += (centerX - node.x) * 0.0009;
+          node.vy += (centerY - node.y) * 0.0009;
         }
 
         for (const edge of graph.edges) {
@@ -160,7 +165,7 @@ function renderGraphHtml() {
           const dx = target.x - source.x;
           const dy = target.y - source.y;
           const distance = Math.max(1, Math.hypot(dx, dy));
-          const force = (distance - 140) * 0.0008;
+          const force = (distance - 120) * 0.0012;
           const fx = dx * force;
           const fy = dy * force;
           source.vx += fx;
@@ -176,7 +181,7 @@ function renderGraphHtml() {
             const dx = b.x - a.x;
             const dy = b.y - a.y;
             const distance = Math.max(1, Math.hypot(dx, dy));
-            const repel = 2200 / (distance * distance);
+            const repel = 1200 / (distance * distance);
             const fx = dx * repel * 0.01;
             const fy = dy * repel * 0.01;
             a.vx -= fx;
@@ -192,6 +197,8 @@ function renderGraphHtml() {
           }
           node.x += node.vx;
           node.y += node.vy;
+          node.vx = Math.abs(node.vx) < 0.001 ? 0 : node.vx;
+          node.vy = Math.abs(node.vy) < 0.001 ? 0 : node.vy;
         }
 
         draw();
