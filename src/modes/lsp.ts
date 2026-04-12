@@ -63,7 +63,7 @@ export async function startLspServer(args: string[]) {
 
     const current = await readPreviewServerState();
     if (current && current.followActive && isPidRunning(current.pid)) {
-      void openInBrowser(`${current.url}/__active`);
+      void openInBrowser(`${current.url}/follow`);
       previewStarted = true;
       return;
     }

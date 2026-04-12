@@ -265,14 +265,22 @@ function previewStyles() {
   `;
 }
 
-function followScript(currentPath: string, followActive: boolean) {
-  if (!followActive) {
+function followScript(currentPath: string, followMode: boolean) {
+  if (!followMode) {
     return "";
   }
 
   return `
     const CURRENT_PATH = ${JSON.stringify(currentPath)};
     let lastActivePath = null;
+
+    function toFollowUrl(path) {
+      if (!path || path === '/') {
+        return '/follow';
+      }
+
+      return '/follow/' + path.replace(/^\/+/, '');
+    }
 
     async function syncActiveFile() {
       try {
@@ -282,7 +290,7 @@ function followScript(currentPath: string, followActive: boolean) {
         if (lastActivePath === null) {
           lastActivePath = activePath;
           if (activePath !== CURRENT_PATH) {
-            window.location.replace(activePath);
+            window.location.replace(toFollowUrl(activePath));
           }
           return;
         }
@@ -290,7 +298,7 @@ function followScript(currentPath: string, followActive: boolean) {
         if (activePath !== lastActivePath) {
           lastActivePath = activePath;
           if (activePath !== CURRENT_PATH) {
-            window.location.replace(activePath);
+            window.location.replace(toFollowUrl(activePath));
           }
         }
       } catch {
@@ -303,15 +311,19 @@ function followScript(currentPath: string, followActive: boolean) {
   `;
 }
 
-function renderToolbar(subtitle: string, right: string) {
+function renderToolbar(subtitle: string, right: string, followAvailable: boolean, followMode: boolean) {
+  const followButton = followAvailable
+    ? `<a class="pill${followMode ? " active" : ""}" href="/follow">follow</a>`
+    : "";
+
   return {
     toolbarLeft: renderBrand("preview", subtitle),
     toolbarCenter: `<div class="search-wrap"><input class="search" placeholder="Search files... (Ctrl+K)" data-search-input><div class="search-results" data-search-results></div></div>`,
-    toolbarRight: right,
+    toolbarRight: `${right}${followButton}`,
   };
 }
 
-function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], files: string[], followActive: boolean) {
+function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], files: string[], followAvailable: boolean, followMode: boolean) {
   const parentPath = urlPath === "/" ? null : urlPath.split("/").slice(0, -1).join("/") || "/";
   const items = [
     ...(parentPath ? [{ kind: "dir", href: parentPath, name: "..", desc: "Parent directory" }] : []),
@@ -329,11 +341,11 @@ function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], f
     })),
   ];
 
-  const toolbar = renderToolbar(dirPath || "/", `<span class="pill active">directory</span>${followActive ? '<span class="pill">follow</span>' : ''}`);
+  const toolbar = renderToolbar(dirPath || "/", `<span class="pill active">directory</span>`, followAvailable, followMode);
   return renderPage({
     title: `${dirPath || "/"} · typst-notes preview`,
     styles: previewStyles(),
-    scripts: `${searchScript()}${followScript(urlPath, followActive)}`,
+    scripts: `${searchScript()}${followScript(urlPath, followMode)}`,
     ...toolbar,
     body: `<main class="page-body flush scrollable">
       <section class="panel directory-list">
@@ -351,9 +363,9 @@ function renderDirectoryPage(urlPath: string, dirPath: string, dirs: string[], f
   });
 }
 
-function renderDocumentPage(filePath: string, svgs: string[], error: string | null, followActive: boolean) {
+function renderDocumentPage(filePath: string, svgs: string[], error: string | null, followAvailable: boolean, followMode: boolean) {
   const parentPath = "/" + filePath.split("/").slice(0, -1).join("/");
-  const toolbar = renderToolbar(filePath, `<a class="pill" href="${parentPath || "/"}">back</a><span class="pill active">${error ? "error" : `${svgs.length} page${svgs.length === 1 ? "" : "s"}`}</span>${followActive ? '<span class="pill">follow</span>' : ''}`);
+  const toolbar = renderToolbar(filePath, `<a class="pill" href="${parentPath || "/"}">back</a><span class="pill active">${error ? "error" : `${svgs.length} page${svgs.length === 1 ? "" : "s"}`}</span>`, followAvailable, followMode);
   return renderPage({
     title: `${filePath} · typst-notes preview`,
     styles: previewStyles(),
@@ -361,7 +373,7 @@ function renderDocumentPage(filePath: string, svgs: string[], error: string | nu
       const es = new EventSource('/events/reload');
       es.onmessage = (event) => { if (event.data === 'reload') location.reload(); };
       es.onerror = () => setTimeout(() => location.reload(), 1000);
-      ${followScript(`/${filePath}`, followActive)}
+      ${followScript(`/${filePath}`, followMode)}
     `,
     ...toolbar,
     body: `<main class="page-body flush scrollable">
@@ -430,6 +442,9 @@ export function startPreviewServer(initialTarget?: string, followActive = false)
         pathname = pathname.slice(0, -1);
       }
 
+      const followMode = followActive && (pathname === "/follow" || pathname.startsWith("/follow/"));
+      let routedPathname = pathname;
+
       if (pathname === "/api/files") {
         return Response.json(await collectTypFiles("."));
       }
@@ -440,7 +455,17 @@ export function startPreviewServer(initialTarget?: string, followActive = false)
 
       if (pathname === "/__active") {
         const state = await readActiveFileState();
-        return Response.redirect(state.path ? `/${state.path}` : "/", 302);
+        return Response.redirect(state.path ? `/follow/${state.path}` : "/follow", 302);
+      }
+
+      if (followMode) {
+        const suffix = pathname.slice("/follow".length);
+        if (!suffix) {
+          const state = await readActiveFileState();
+          routedPathname = state.path ? `/${state.path}` : "/";
+        } else {
+          routedPathname = suffix;
+        }
       }
 
       if (pathname === "/events/reload") {
@@ -462,20 +487,20 @@ export function startPreviewServer(initialTarget?: string, followActive = false)
         });
       }
 
-      if (pathname === "/" || pathname === "") {
+      if (routedPathname === "/" || routedPathname === "") {
         const { dirs, files } = await listTypDirectory(".");
-        return new Response(renderDirectoryPage("/", "/", dirs, files, followActive), {
+        return new Response(renderDirectoryPage("/", "/", dirs, files, followActive, followMode), {
           headers: { "Content-Type": "text/html" },
         });
       }
 
-      const relativePath = normalizeRequestPath(pathname);
+      const relativePath = normalizeRequestPath(routedPathname);
       if (relativePath.endsWith(".typ")) {
         const file = Bun.file(relativePath);
         if (await file.exists()) {
           const { svgs, error } = await compileFileToSvgPages(relativePath);
           watchFile(relativePath);
-          return new Response(renderDocumentPage(relativePath, svgs, error, followActive), {
+          return new Response(renderDocumentPage(relativePath, svgs, error, followActive, followMode), {
             headers: { "Content-Type": "text/html" },
           });
         }
@@ -483,7 +508,7 @@ export function startPreviewServer(initialTarget?: string, followActive = false)
 
       const { dirs, files } = await listTypDirectory(relativePath);
       if (dirs.length > 0 || files.length > 0) {
-        return new Response(renderDirectoryPage(pathname, relativePath, dirs, files, followActive), {
+        return new Response(renderDirectoryPage(routedPathname, relativePath, dirs, files, followActive, followMode), {
           headers: { "Content-Type": "text/html" },
         });
       }
@@ -492,20 +517,20 @@ export function startPreviewServer(initialTarget?: string, followActive = false)
       if (await Bun.file(withExtension).exists()) {
         const { svgs, error } = await compileFileToSvgPages(withExtension);
         watchFile(withExtension);
-        return new Response(renderDocumentPage(withExtension, svgs, error, followActive), {
+        return new Response(renderDocumentPage(withExtension, svgs, error, followActive, followMode), {
           headers: { "Content-Type": "text/html" },
         });
       }
 
       const root = await listTypDirectory(".");
-      return new Response(renderDirectoryPage("/", "/", root.dirs, root.files, followActive), {
+      return new Response(renderDirectoryPage("/", "/", root.dirs, root.files, followActive, followMode), {
         status: 404,
         headers: { "Content-Type": "text/html" },
       });
     },
   });
 
-  const initialPath = initialTarget ? `/${initialTarget}` : (followActive ? "/__active" : "/");
+  const initialPath = initialTarget ? `/${initialTarget}` : (followActive ? "/follow" : "/");
   const url = `http://localhost:${server.port}${initialPath}`;
 
   void writePreviewServerState({
