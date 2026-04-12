@@ -74,7 +74,7 @@ async function discoverFlashcards() {
   const files = await collectTypFiles(".");
   const decks = new Map<string, Flashcard[]>();
 
-  const rawCards = await queryFlashcardsFromFiles(files).catch(() => []);
+  const rawCards = await queryFlashcardsFromFiles(files);
   for (const raw of rawCards) {
     const source = raw.source || "";
     const deck = deckNameForFile(source || ".");
