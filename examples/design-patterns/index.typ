@@ -10,11 +10,11 @@ Start with the core pattern notes:
 - #link("./strategy.typ")[Strategy]
 
 #flashcard(
-  [What does a design pattern capture?],
-  [A reusable solution structure for a recurring design problem in context.],
+  "What does a design pattern capture?",
+  "A reusable solution structure for a recurring design problem in context.",
 )
 
 #flashcard(
-  [Why are links between notes useful here?],
-  [They let you move between related ideas quickly and make the graph view meaningful.],
+  "Why are links between notes useful here?",
+  "They let you move between related ideas quickly and make the graph view meaningful.",
 )

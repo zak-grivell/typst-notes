@@ -11,6 +11,6 @@ Suggested path:
 4. #link("./strategy.typ")[Review Strategy]
 
 #flashcard(
-  [What does this example folder demonstrate?],
-  [Preview navigation, graph links, and SRS flashcard extraction from linked Typst notes.],
+  "What does this example folder demonstrate?",
+  "Preview navigation, graph links, and SRS flashcard extraction from linked Typst notes.",
 )

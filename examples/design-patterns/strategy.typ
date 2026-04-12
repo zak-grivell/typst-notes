@@ -12,11 +12,11 @@ Related notes:
 Strategy encapsulates interchangeable algorithms behind a common interface.
 
 #flashcard(
-  [What changes when you use Strategy?],
-  [The algorithm can vary independently from the code that uses it.],
+  "What changes when you use Strategy?",
+  "The algorithm can vary independently from the code that uses it.",
 )
 
 #flashcard(
-  [When is Strategy a good fit?],
-  [When you have several variants of behavior and want to swap them without branching all over the caller.],
+  "When is Strategy a good fit?",
+  "When you have several variants of behavior and want to swap them without branching all over the caller.",
 )

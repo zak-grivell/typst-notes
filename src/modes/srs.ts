@@ -4,7 +4,7 @@ import { openInBrowser } from "../lib/browser.ts";
 import { escapeHtml, renderBrand, renderPage } from "../lib/html.ts";
 import { collectTypFiles, deckNameForFile } from "../lib/project.ts";
 import { theme } from "../lib/theme.ts";
-import { queryFlashcards, renderMarkupToSvg } from "../lib/typst.ts";
+import { queryFlashcardsFromFiles, renderMarkupToSvg } from "../lib/typst.ts";
 
 type CardProgress = {
   id: string;
@@ -74,28 +74,19 @@ async function discoverFlashcards() {
   const files = await collectTypFiles(".");
   const decks = new Map<string, Flashcard[]>();
 
-  for (const file of files) {
-    try {
-      const rawCards = await queryFlashcards(file);
-      if (rawCards.length === 0) {
-        continue;
-      }
-
-      const deck = deckNameForFile(file);
-      const cards = decks.get(deck) || [];
-      for (const raw of rawCards) {
-        cards.push({
-          id: raw.id,
-          deck,
-          source: file,
-          q: raw.q,
-          a: raw.a,
-        });
-      }
-      decks.set(deck, cards);
-    } catch {
-      // Ignore files without flashcards or invalid query output.
-    }
+  const rawCards = await queryFlashcardsFromFiles(files).catch(() => []);
+  for (const raw of rawCards) {
+    const source = raw.source || "";
+    const deck = deckNameForFile(source || ".");
+    const cards = decks.get(deck) || [];
+    cards.push({
+      id: raw.id,
+      deck,
+      source,
+      q: raw.q,
+      a: raw.a,
+    });
+    decks.set(deck, cards);
   }
 
   return decks;
