@@ -148,6 +148,7 @@ function renderGraphHtml() {
       }
 
       function tick() {
+        const maxSpeed = 4.5;
         const centerX = 0;
         const centerY = 0;
 
@@ -166,8 +167,8 @@ function renderGraphHtml() {
           const dy = target.y - source.y;
           const distance = Math.max(1, Math.hypot(dx, dy));
           const force = (distance - 120) * 0.0012;
-          const fx = dx * force;
-          const fy = dy * force;
+          const fx = (dx / distance) * force;
+          const fy = (dy / distance) * force;
           source.vx += fx;
           source.vy += fy;
           target.vx -= fx;
@@ -194,6 +195,15 @@ function renderGraphHtml() {
         for (const node of graph.nodes) {
           if (state.dragging && state.dragNode && state.dragNode.id === node.id) {
             continue;
+          }
+          const speed = Math.hypot(node.vx, node.vy);
+          if (!Number.isFinite(speed)) {
+            node.vx = 0;
+            node.vy = 0;
+          } else if (speed > maxSpeed) {
+            const scale = maxSpeed / speed;
+            node.vx *= scale;
+            node.vy *= scale;
           }
           node.x += node.vx;
           node.y += node.vy;
