@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { readFile, writeFile } from "fs/promises";
 import { openInBrowser } from "../lib/browser.ts";
-import { escapeHtml, renderBrand, renderPage } from "../lib/html.ts";
+import { renderPage } from "../lib/html.ts";
 import { collectTypFiles, deckNameForFile } from "../lib/project.ts";
 import { theme } from "../lib/theme.ts";
 import { queryFlashcardsFromFiles, renderMarkupToSvg } from "../lib/typst.ts";
@@ -98,6 +98,14 @@ function flashcardUrl(card: Flashcard, side: FlashcardSide) {
 
 function srsStyles() {
   return `
+    .toolbar {
+      display: none;
+    }
+
+    .page-body.flush {
+      height: 100%;
+    }
+
     .review-panel {
       display: flex;
       flex-direction: column;
@@ -111,6 +119,31 @@ function srsStyles() {
       box-shadow: none;
     }
 
+    .srs-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+      flex-wrap: wrap;
+      border-bottom: 1px solid ${theme.surface0};
+      background: rgba(41, 44, 60, 0.85);
+    }
+
+    .srs-controls .toolbar-control {
+      min-height: 42px;
+      border-radius: 12px;
+      padding: 0 14px;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .srs-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
     .review-stage {
       flex: 1;
       height: 100%;
@@ -118,7 +151,7 @@ function srsStyles() {
       display: flex;
       flex-direction: column;
       padding: 0;
-      gap: 0;
+      gap: 8px;
     }
 
     .card-frame {
@@ -128,8 +161,41 @@ function srsStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
-      padding: 0;
+      overflow: auto;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: rgba(35, 38, 52, 0.72);
+      border: 1px solid ${theme.surface0};
+      touch-action: manipulation;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .card-frame.zoomed {
+      align-items: flex-start;
+      justify-content: flex-start;
+      cursor: grab;
+    }
+
+    .card-media-wrap {
+      width: 100%;
+      min-width: 100%;
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-frame.zoomed .card-media-wrap {
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+
+    .card-media {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      transition: width 0.15s ease;
     }
 
     .card-frame img {
@@ -145,23 +211,63 @@ function srsStyles() {
       display: block;
     }
 
-    .action-row {
+    .card-tools {
       display: flex;
-      flex-shrink: 0;
+      align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
+      padding: 0 max(12px, env(safe-area-inset-right)) 2px max(12px, env(safe-area-inset-left));
       flex-wrap: wrap;
-      padding: 12px 16px;
+    }
+
+    .tool-btn {
+      min-height: 40px;
+      min-width: 52px;
+      border-radius: 10px;
+      border: 1px solid ${theme.surface1};
+      background: rgba(65, 69, 89, 0.85);
+      color: ${theme.text};
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    .tool-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .tool-status {
+      color: ${theme.subtext0};
+      min-width: 56px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      flex-shrink: 0;
+      gap: 10px;
+      padding: 12px max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
     }
 
     .action-btn {
-      min-width: 116px;
-      min-height: 42px;
+      min-width: 0;
+      min-height: 56px;
       border: none;
       border-radius: 14px;
       cursor: pointer;
       font-weight: 700;
+      font-size: 16px;
+      padding: 0 12px;
       color: ${theme.crust};
+    }
+
+    .action-btn.show {
+      grid-column: 1 / -1;
     }
 
     .action-btn.show { background: ${theme.blue}; }
@@ -174,13 +280,13 @@ function srsStyles() {
       flex-shrink: 0;
       text-align: center;
       color: ${theme.subtext0};
-      font-size: 13px;
-      padding: 0 16px 12px;
+      font-size: 12px;
+      padding: 0 max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
     }
 
     .progress-track {
       flex-shrink: 0;
-      height: 8px;
+      height: 10px;
       border-radius: 0;
       background: ${theme.surface0};
       overflow: hidden;
@@ -197,6 +303,47 @@ function srsStyles() {
       font-size: 14px;
       color: ${theme.subtext0};
     }
+
+    @media (min-width: 861px) {
+      .action-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        max-width: 860px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .action-btn.show {
+        grid-column: 2 / 4;
+      }
+
+      .hint {
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .srs-controls {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+
+      .srs-controls .toolbar-control {
+        flex: 1 1 100%;
+      }
+
+      .srs-meta {
+        margin-left: 0;
+      }
+
+      .pill {
+        min-height: 38px;
+      }
+
+      .hint {
+        display: none;
+      }
+    }
   `;
 }
 
@@ -204,16 +351,27 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
   return renderPage({
     title: "typst-notes srs",
     styles: srsStyles(),
-    toolbarLeft: renderBrand("srs", deckFilter || "all decks"),
-    toolbarCenter: `<select class="toolbar-control" id="deck-select"><option>Loading decks...</option></select>`,
-    toolbarRight: `<span class="pill" id="due-pill">0 due</span><span class="pill">${showAll ? "all" : "due"}</span>`,
+    toolbarLeft: "",
     body: `<main class="page-body flush">
       <section class="panel review-panel">
+        <div class="srs-controls">
+          <select class="toolbar-control" id="deck-select"><option>Loading decks...</option></select>
+          <div class="srs-meta">
+            <span class="pill" id="due-pill">0/0</span>
+            <span class="pill">${showAll ? "all" : "due"}</span>
+          </div>
+        </div>
         <div class="review-stage">
           <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
           <div class="card-frame" id="card-frame"><div class="empty-state">Loading...</div></div>
+          <div class="card-tools">
+            <button class="tool-btn" id="zoom-out" aria-label="Zoom out">A-</button>
+            <button class="tool-btn" id="zoom-reset" aria-label="Reset zoom">Fit</button>
+            <button class="tool-btn" id="zoom-in" aria-label="Zoom in">A+</button>
+            <span class="tool-status" id="zoom-level">100%</span>
+          </div>
           <div class="action-row" id="action-row"></div>
-          <div class="hint" id="hint"><span class="kbd">Space</span> reveal <span class="kbd">1</span> again <span class="kbd">2</span> hard <span class="kbd">3</span> good <span class="kbd">4</span> easy</div>
+          <div class="hint" id="hint">Tap card or <span class="kbd">Space</span> to reveal · <span class="kbd">1</span> again <span class="kbd">2</span> hard <span class="kbd">3</span> good <span class="kbd">4</span> easy</div>
         </div>
       </section>
     </main>`,
@@ -227,8 +385,66 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
       let showingAnswer = false;
       let sessionQueue = [];
       let sessionIndex = 0;
+      let zoomLevel = 1;
+      const MIN_ZOOM = 1;
+      const MAX_ZOOM = 2.5;
+      const ZOOM_STEP = 0.25;
       const deckSelect = document.getElementById('deck-select');
+      const frame = document.getElementById('card-frame');
+      const zoomOutBtn = document.getElementById('zoom-out');
+      const zoomInBtn = document.getElementById('zoom-in');
+      const zoomResetBtn = document.getElementById('zoom-reset');
+      const zoomLevelLabel = document.getElementById('zoom-level');
       const preloaded = new Set();
+
+      function clampZoom(value) {
+        return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
+      }
+
+      function renderZoomUi() {
+        zoomLevelLabel.textContent = Math.round(zoomLevel * 100) + '%';
+        zoomOutBtn.disabled = zoomLevel <= MIN_ZOOM;
+        zoomInBtn.disabled = zoomLevel >= MAX_ZOOM;
+        zoomResetBtn.disabled = zoomLevel === 1;
+      }
+
+      function applyZoom() {
+        const media = frame.querySelector('.card-media');
+        if (!media) {
+          renderZoomUi();
+          return;
+        }
+
+        if (zoomLevel <= 1) {
+          media.style.width = '100%';
+          media.style.height = '100%';
+          media.style.maxWidth = '';
+          frame.classList.remove('zoomed');
+          frame.scrollTop = 0;
+          frame.scrollLeft = 0;
+        } else {
+          media.style.width = (zoomLevel * 100) + '%';
+          media.style.height = 'auto';
+          media.style.maxWidth = 'none';
+          frame.classList.add('zoomed');
+        }
+
+        renderZoomUi();
+      }
+
+      function setZoom(value) {
+        zoomLevel = clampZoom(value);
+        applyZoom();
+      }
+
+      function renderCard(side) {
+        if (!currentCard) {
+          return;
+        }
+
+        frame.innerHTML = '<div class="card-media-wrap"><img class="card-media" src="/flashcard/' + currentCard.deck + '/' + currentCard.id + '/' + side + '" alt="' + (side === 'question' ? 'Question' : 'Answer') + '"></div>';
+        applyZoom();
+      }
 
       function preloadUrl(url) {
         if (!url || preloaded.has(url)) {
@@ -321,7 +537,6 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
       }
 
       function showCurrentCard() {
-        const frame = document.getElementById('card-frame');
         const actions = document.getElementById('action-row');
         updateStats();
 
@@ -330,12 +545,14 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
           showingAnswer = false;
           frame.innerHTML = '<div class="empty-state srs-empty">Done</div>';
           actions.innerHTML = '';
+          renderZoomUi();
           return;
         }
 
         currentCard = sessionQueue[sessionIndex];
         showingAnswer = false;
-        frame.innerHTML = '<img src="/flashcard/' + currentCard.deck + '/' + currentCard.id + '/question" alt="Question">';
+        setZoom(1);
+        renderCard('question');
         actions.innerHTML = '<button class="action-btn show" id="show-answer">Show Answer</button>';
         document.getElementById('show-answer').addEventListener('click', showAnswer);
         warmUpcomingCards();
@@ -344,7 +561,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
       function showAnswer() {
         if (!currentCard) return;
         showingAnswer = true;
-        document.getElementById('card-frame').innerHTML = '<img src="/flashcard/' + currentCard.deck + '/' + currentCard.id + '/answer" alt="Answer">';
+        renderCard('answer');
         document.getElementById('action-row').innerHTML = [
           ['again', 'Again', 1],
           ['hard', 'Hard', 3],
@@ -373,6 +590,12 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
         if (event.key === ' ' && !showingAnswer && currentCard) {
           event.preventDefault();
           showAnswer();
+        } else if (event.key === '+' || event.key === '=') {
+          setZoom(zoomLevel + ZOOM_STEP);
+        } else if (event.key === '-') {
+          setZoom(zoomLevel - ZOOM_STEP);
+        } else if (event.key === '0') {
+          setZoom(1);
         } else if (showingAnswer) {
           if (event.key === '1') rateCard(1);
           if (event.key === '2') rateCard(3);
@@ -385,6 +608,18 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
         currentDeck = deckSelect.value;
         startSession();
       });
+
+      frame.addEventListener('click', () => {
+        if (!showingAnswer && currentCard) {
+          showAnswer();
+        }
+      });
+
+      zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel - ZOOM_STEP));
+      zoomInBtn.addEventListener('click', () => setZoom(zoomLevel + ZOOM_STEP));
+      zoomResetBtn.addEventListener('click', () => setZoom(1));
+
+      renderZoomUi();
 
       loadData();
     `,
