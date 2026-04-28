@@ -348,6 +348,9 @@ function srsStyles() {
 }
 
 function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
+  const allDecksLabel = "All decks";
+  const allDecksValue = "__all_decks__";
+
   return renderPage({
     title: "typst-notes srs",
     styles: srsStyles(),
@@ -500,6 +503,22 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
         });
       }
 
+      function currentDeckCards() {
+        if (DECK_FILTER) {
+          return dueCards(DECK_FILTER);
+        }
+
+        if (currentDeck === '${allDecksValue}') {
+          return visibleDeckNames().flatMap((name) => dueCards(name));
+        }
+
+        return dueCards(currentDeck);
+      }
+
+      function deckLabel(deckName) {
+        return deckName === '${allDecksValue}' ? '${allDecksLabel}' : deckName;
+      }
+
       function renderDecks() {
         const names = visibleDeckNames();
         if (names.length === 0) {
@@ -510,15 +529,23 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
         }
 
         if (!currentDeck || !names.includes(currentDeck)) {
-          currentDeck = names[0];
+          currentDeck = DECK_FILTER ? names[0] : '${allDecksValue}';
         }
-        deckSelect.innerHTML = names.map((name) => '<option value="' + name + '">' + name + '</option>').join('');
+
+        if (DECK_FILTER) {
+          deckSelect.innerHTML = names.map((name) => '<option value="' + name + '">' + name + '</option>').join('');
+        } else {
+          deckSelect.innerHTML = ['<option value="${allDecksValue}">${allDecksLabel}</option>']
+            .concat(names.map((name) => '<option value="' + name + '">' + name + '</option>'))
+            .join('');
+        }
+
         deckSelect.value = currentDeck;
         startSession();
       }
 
       function startSession() {
-        sessionQueue = [...dueCards(currentDeck)];
+        sessionQueue = [...currentDeckCards()];
         for (let i = sessionQueue.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [sessionQueue[i], sessionQueue[j]] = [sessionQueue[j], sessionQueue[i]];
@@ -531,7 +558,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
       function updateStats() {
         const total = sessionQueue.length;
         const done = Math.min(sessionIndex, total);
-        document.title = (currentDeck || 'srs') + ' · typst-notes srs';
+        document.title = deckLabel(currentDeck || 'srs') + ' · typst-notes srs';
         document.getElementById('due-pill').textContent = done + '/' + total;
         document.getElementById('progress-fill').style.width = (total === 0 ? 0 : (done / total) * 100) + '%';
       }
