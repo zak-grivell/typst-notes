@@ -20,6 +20,7 @@ nix run github:zak-grivell/typst-notes -- preview notes/main.typ
 nix run github:zak-grivell/typst-notes -- preview notes/
 nix run github:zak-grivell/typst-notes -- srs
 nix run github:zak-grivell/typst-notes -- srs --deck=oose --all
+nix run github:zak-grivell/typst-notes -- srs --cram
 nix run github:zak-grivell/typst-notes -- graph
 ```
 
@@ -43,7 +44,7 @@ typst-notes graph
 ```bash
 typst-notes preview [path]
 typst-notes preview --follow
-typst-notes srs [--deck=NAME] [--all] [--port=3000]
+typst-notes srs [--deck=NAME] [--all] [--cram] [--port=3000]
 typst-notes graph [--port=3002]
 typst-notes lsp
 ```
@@ -51,6 +52,7 @@ typst-notes lsp
 - `typst-notes preview` starts the live Typst preview UI
 - `typst-notes preview --follow` follows the file most recently reported by `typst-notes lsp`
 - `typst-notes srs` starts the spaced repetition UI
+- `typst-notes srs --cram` reviews all cards, saves SRS scheduling changes, and hides cards you already rated while that cram server process is still running
 - `typst-notes graph` starts the project graph UI
 - `typst-notes lsp` runs a tiny language server that tracks the active Typst file
 - SRS progress is stored in `.srs-progress.json` in the current working directory

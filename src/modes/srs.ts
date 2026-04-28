@@ -347,7 +347,7 @@ function srsStyles() {
   `;
 }
 
-function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
+function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: boolean) {
   const allDecksLabel = "All decks";
   const allDecksValue = "__all_decks__";
 
@@ -361,7 +361,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean) {
           <select class="toolbar-control" id="deck-select"><option>Loading decks...</option></select>
           <div class="srs-meta">
             <span class="pill" id="due-pill">0/0</span>
-            <span class="pill">${showAll ? "all" : "due"}</span>
+             <span class="pill">${cramMode ? "cram" : showAll ? "all" : "due"}</span>
           </div>
         </div>
         <div class="review-stage">
@@ -658,12 +658,13 @@ export function printSrsHelp() {
 typst-notes srs
 
 Usage:
-  typst-notes srs [--deck=NAME] [--all] [--port=3000]
+  typst-notes srs [--deck=NAME] [--all] [--cram] [--port=3000]
 
 Examples:
   typst-notes srs
   typst-notes srs --deck=oose
   typst-notes srs --all
+  typst-notes srs --cram
 `);
 }
 
@@ -679,7 +680,8 @@ export async function startSrsServer(args: string[]) {
 
   const port = parseInt(getArg(args, "--port=") || "3000", 10);
   const deckFilter = getArg(args, "--deck=") || null;
-  const showAll = args.includes("--all");
+  const cramMode = args.includes("--cram");
+  const showAll = args.includes("--all") || cramMode;
   const decks = await discoverFlashcards();
   const progress = await loadProgress();
 
@@ -694,6 +696,7 @@ export async function startSrsServer(args: string[]) {
       cardLookup.set(card.id, card);
     }
   }
+  const cramReviewed = new Set<string>();
 
   const svgCache = new Map<string, Promise<string>>();
 
@@ -726,7 +729,7 @@ export async function startSrsServer(args: string[]) {
       const url = new URL(req.url);
 
       if (url.pathname === "/" || url.pathname === "/index.html") {
-        return new Response(renderSrsHtml(deckFilter, showAll), {
+        return new Response(renderSrsHtml(deckFilter, showAll, cramMode), {
           headers: { "Content-Type": "text/html" },
         });
       }
@@ -734,7 +737,10 @@ export async function startSrsServer(args: string[]) {
       if (url.pathname === "/api/decks") {
         const payload: Record<string, Array<{ id: string; deck: string; source: string }>> = {};
         for (const [deck, cards] of decks) {
-          payload[deck] = cards.map((card) => ({ id: card.id, deck: card.deck, source: card.source }));
+          const visibleCards = cramMode
+            ? cards.filter((card) => !cramReviewed.has(card.id))
+            : cards;
+          payload[deck] = visibleCards.map((card) => ({ id: card.id, deck: card.deck, source: card.source }));
         }
         return Response.json(payload);
       }
@@ -756,6 +762,9 @@ export async function startSrsServer(args: string[]) {
         };
 
         progress.cards[body.id] = sm2(current, body.quality);
+        if (cramMode) {
+          cramReviewed.add(body.id);
+        }
         await saveProgress(progress);
         return Response.json({ ok: true });
       }
