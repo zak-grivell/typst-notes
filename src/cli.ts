@@ -26,6 +26,7 @@ Examples:
   typst-notes srs --deck=oose --all
   typst-notes srs --deck=oose,algorithms --ignore=archived
   typst-notes srs --cram
+  typst-notes srs --redo
   typst-notes graph
   typst-notes lsp
 `);

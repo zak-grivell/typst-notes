@@ -14,6 +14,7 @@ type CardProgress = {
   repetitions: number;
   nextReview: number;
   lastReview: number | null;
+  lastQuality?: number;
 };
 
 type ProgressData = {
@@ -66,6 +67,7 @@ function sm2(card: CardProgress, quality: number): CardProgress {
     next.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)),
   );
   next.lastReview = Date.now();
+  next.lastQuality = quality;
   next.nextReview = Date.now() + next.interval * 24 * 60 * 60 * 1000;
   return next;
 }
@@ -472,7 +474,7 @@ export function printSrsHelp() {
 typst-notes srs
 
 Usage:
-  typst-notes srs [--deck=NAME[,NAME...]] [--ignore=NAME[,NAME...]] [--all] [--cram] [--port=3000]
+  typst-notes srs [--deck=NAME[,NAME...]] [--ignore=NAME[,NAME...]] [--all] [--cram] [--redo] [--port=3000]
 
 Examples:
   typst-notes srs
@@ -481,6 +483,7 @@ Examples:
   typst-notes srs --ignore=oose
   typst-notes srs --all
   typst-notes srs --cram
+  typst-notes srs --redo
 `);
 }
 
@@ -509,7 +512,8 @@ export async function startSrsServer(args: string[]) {
   const includeDecks = parseDeckList(getArg(args, "--deck="));
   const ignoreDecks = parseDeckList(getArg(args, "--ignore="));
   const cramMode = args.includes("--cram");
-  const showAll = args.includes("--all") || cramMode;
+  const redoMode = args.includes("--redo");
+  const showAll = args.includes("--all") || cramMode || redoMode;
   const discoveredDecks = await discoverFlashcards();
   const progress = await loadProgress();
   const knownDeckNames = new Set(discoveredDecks.keys());
@@ -546,6 +550,21 @@ export async function startSrsServer(args: string[]) {
     }
   }
   const cramReviewed = new Set<string>();
+
+  function shouldShowCard(card: Flashcard) {
+    if (!redoMode) {
+      return true;
+    }
+
+    const state = progress.cards[card.id];
+    if (!state?.lastReview) {
+      return false;
+    }
+
+    return state.lastQuality === undefined
+      ? state.easeFactor < 2.6
+      : state.lastQuality !== 5;
+  }
 
   const svgCache = new Map<string, Promise<string>>();
 
@@ -587,8 +606,8 @@ export async function startSrsServer(args: string[]) {
         const payload: Record<string, Array<{ id: string; deck: string; source: string }>> = {};
         for (const [deck, cards] of decks) {
           const visibleCards = cramMode
-            ? cards.filter((card) => !cramReviewed.has(card.id))
-            : cards;
+            ? cards.filter((card) => shouldShowCard(card) && !cramReviewed.has(card.id))
+            : cards.filter(shouldShowCard);
           payload[deck] = visibleCards.map((card) => ({ id: card.id, deck: card.deck, source: card.source }));
         }
         return Response.json(payload);
