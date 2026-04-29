@@ -122,26 +122,10 @@ function srsStyles() {
     .srs-controls {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
-      flex-wrap: wrap;
+      justify-content: center;
+      padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
       border-bottom: 1px solid ${theme.surface0};
-      background: rgba(41, 44, 60, 0.85);
-    }
-
-    .srs-controls .toolbar-control {
-      min-height: 42px;
-      border-radius: 12px;
-      padding: 0 14px;
-      flex: 1;
-      min-width: 180px;
-    }
-
-    .srs-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
+      background: ${theme.base};
     }
 
     .review-stage {
@@ -162,18 +146,12 @@ function srsStyles() {
       align-items: center;
       justify-content: center;
       overflow: auto;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(35, 38, 52, 0.72);
-      border: 1px solid ${theme.surface0};
+      padding: 4px 6px;
+      border-radius: 0;
+      background: ${theme.base};
+      border: 0;
       touch-action: manipulation;
       -webkit-overflow-scrolling: touch;
-    }
-
-    .card-frame.zoomed {
-      align-items: flex-start;
-      justify-content: flex-start;
-      cursor: grab;
     }
 
     .card-media-wrap {
@@ -185,17 +163,11 @@ function srsStyles() {
       justify-content: center;
     }
 
-    .card-frame.zoomed .card-media-wrap {
-      align-items: flex-start;
-      justify-content: flex-start;
-    }
-
     .card-media {
       width: 100%;
       height: 100%;
       display: block;
       object-fit: contain;
-      transition: width 0.15s ease;
     }
 
     .card-frame img {
@@ -211,54 +183,19 @@ function srsStyles() {
       display: block;
     }
 
-    .card-tools {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 0 max(12px, env(safe-area-inset-right)) 2px max(12px, env(safe-area-inset-left));
-      flex-wrap: wrap;
-    }
-
-    .tool-btn {
-      min-height: 40px;
-      min-width: 52px;
-      border-radius: 10px;
-      border: 1px solid ${theme.surface1};
-      background: rgba(65, 69, 89, 0.85);
-      color: ${theme.text};
-      font-size: 14px;
-      font-weight: 700;
-      padding: 0 12px;
-      cursor: pointer;
-    }
-
-    .tool-btn:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    .tool-status {
-      color: ${theme.subtext0};
-      min-width: 56px;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
     .action-row {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       flex-shrink: 0;
-      gap: 10px;
-      padding: 12px max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+      gap: 8px;
+      padding: 8px max(10px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
     }
 
     .action-btn {
       min-width: 0;
       min-height: 56px;
       border: none;
-      border-radius: 14px;
+      border-radius: 10px;
       cursor: pointer;
       font-weight: 700;
       font-size: 16px;
@@ -281,7 +218,7 @@ function srsStyles() {
       text-align: center;
       color: ${theme.subtext0};
       font-size: 12px;
-      padding: 0 max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+      padding: 0 max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
     }
 
     .progress-track {
@@ -328,14 +265,6 @@ function srsStyles() {
         z-index: 20;
       }
 
-      .srs-controls .toolbar-control {
-        flex: 1 1 100%;
-      }
-
-      .srs-meta {
-        margin-left: 0;
-      }
-
       .pill {
         min-height: 38px;
       }
@@ -347,10 +276,7 @@ function srsStyles() {
   `;
 }
 
-function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: boolean) {
-  const allDecksLabel = "All decks";
-  const allDecksValue = "__all_decks__";
-
+function renderSrsHtml(showAll: boolean) {
   return renderPage({
     title: "typst-notes srs",
     styles: srsStyles(),
@@ -358,87 +284,26 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
     body: `<main class="page-body flush">
       <section class="panel review-panel">
         <div class="srs-controls">
-          <select class="toolbar-control" id="deck-select"><option>Loading decks...</option></select>
-          <div class="srs-meta">
-            <span class="pill" id="due-pill">0/0</span>
-             <span class="pill">${cramMode ? "cram" : showAll ? "all" : "due"}</span>
-          </div>
+          <span class="pill" id="due-pill">0/0</span>
         </div>
         <div class="review-stage">
           <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
           <div class="card-frame" id="card-frame"><div class="empty-state">Loading...</div></div>
-          <div class="card-tools">
-            <button class="tool-btn" id="zoom-out" aria-label="Zoom out">A-</button>
-            <button class="tool-btn" id="zoom-reset" aria-label="Reset zoom">Fit</button>
-            <button class="tool-btn" id="zoom-in" aria-label="Zoom in">A+</button>
-            <span class="tool-status" id="zoom-level">100%</span>
-          </div>
           <div class="action-row" id="action-row"></div>
           <div class="hint" id="hint">Tap card or <span class="kbd">Space</span> to reveal · <span class="kbd">1</span> again <span class="kbd">2</span> hard <span class="kbd">3</span> good <span class="kbd">4</span> easy</div>
         </div>
       </section>
     </main>`,
     scripts: `
-      const DECK_FILTER = ${deckFilter ? JSON.stringify(deckFilter) : "null"};
       const SHOW_ALL = ${showAll ? "true" : "false"};
       let decks = {};
       let progress = { cards: {} };
-      let currentDeck = null;
       let currentCard = null;
       let showingAnswer = false;
       let sessionQueue = [];
       let sessionIndex = 0;
-      let zoomLevel = 1;
-      const MIN_ZOOM = 1;
-      const MAX_ZOOM = 2.5;
-      const ZOOM_STEP = 0.25;
-      const deckSelect = document.getElementById('deck-select');
       const frame = document.getElementById('card-frame');
-      const zoomOutBtn = document.getElementById('zoom-out');
-      const zoomInBtn = document.getElementById('zoom-in');
-      const zoomResetBtn = document.getElementById('zoom-reset');
-      const zoomLevelLabel = document.getElementById('zoom-level');
       const preloaded = new Set();
-
-      function clampZoom(value) {
-        return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
-      }
-
-      function renderZoomUi() {
-        zoomLevelLabel.textContent = Math.round(zoomLevel * 100) + '%';
-        zoomOutBtn.disabled = zoomLevel <= MIN_ZOOM;
-        zoomInBtn.disabled = zoomLevel >= MAX_ZOOM;
-        zoomResetBtn.disabled = zoomLevel === 1;
-      }
-
-      function applyZoom() {
-        const media = frame.querySelector('.card-media');
-        if (!media) {
-          renderZoomUi();
-          return;
-        }
-
-        if (zoomLevel <= 1) {
-          media.style.width = '100%';
-          media.style.height = '100%';
-          media.style.maxWidth = '';
-          frame.classList.remove('zoomed');
-          frame.scrollTop = 0;
-          frame.scrollLeft = 0;
-        } else {
-          media.style.width = (zoomLevel * 100) + '%';
-          media.style.height = 'auto';
-          media.style.maxWidth = 'none';
-          frame.classList.add('zoomed');
-        }
-
-        renderZoomUi();
-      }
-
-      function setZoom(value) {
-        zoomLevel = clampZoom(value);
-        applyZoom();
-      }
 
       function renderCard(side) {
         if (!currentCard) {
@@ -446,7 +311,6 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
         }
 
         frame.innerHTML = '<div class="card-media-wrap"><img class="card-media" src="/flashcard/' + currentCard.deck + '/' + currentCard.id + '/' + side + '" alt="' + (side === 'question' ? 'Question' : 'Answer') + '"></div>';
-        applyZoom();
       }
 
       function preloadUrl(url) {
@@ -487,11 +351,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
       }
 
       function visibleDeckNames() {
-        const names = Object.keys(decks).sort();
-        if (DECK_FILTER && names.includes(DECK_FILTER)) {
-          return [DECK_FILTER];
-        }
-        return names;
+        return Object.keys(decks).sort();
       }
 
       function dueCards(deckName) {
@@ -503,49 +363,22 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
         });
       }
 
-      function currentDeckCards() {
-        if (DECK_FILTER) {
-          return dueCards(DECK_FILTER);
-        }
-
-        if (currentDeck === '${allDecksValue}') {
-          return visibleDeckNames().flatMap((name) => dueCards(name));
-        }
-
-        return dueCards(currentDeck);
-      }
-
-      function deckLabel(deckName) {
-        return deckName === '${allDecksValue}' ? '${allDecksLabel}' : deckName;
+      function sessionCards() {
+        return visibleDeckNames().flatMap((name) => dueCards(name));
       }
 
       function renderDecks() {
         const names = visibleDeckNames();
         if (names.length === 0) {
-          deckSelect.innerHTML = '<option>No decks</option>';
           document.getElementById('card-frame').innerHTML = '<div class="empty-state srs-empty">No flashcards found.</div>';
           document.getElementById('action-row').innerHTML = '';
           return;
         }
-
-        if (!currentDeck || !names.includes(currentDeck)) {
-          currentDeck = DECK_FILTER ? names[0] : '${allDecksValue}';
-        }
-
-        if (DECK_FILTER) {
-          deckSelect.innerHTML = names.map((name) => '<option value="' + name + '">' + name + '</option>').join('');
-        } else {
-          deckSelect.innerHTML = ['<option value="${allDecksValue}">${allDecksLabel}</option>']
-            .concat(names.map((name) => '<option value="' + name + '">' + name + '</option>'))
-            .join('');
-        }
-
-        deckSelect.value = currentDeck;
         startSession();
       }
 
       function startSession() {
-        sessionQueue = [...currentDeckCards()];
+        sessionQueue = [...sessionCards()];
         for (let i = sessionQueue.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [sessionQueue[i], sessionQueue[j]] = [sessionQueue[j], sessionQueue[i]];
@@ -558,7 +391,7 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
       function updateStats() {
         const total = sessionQueue.length;
         const done = Math.min(sessionIndex, total);
-        document.title = deckLabel(currentDeck || 'srs') + ' · typst-notes srs';
+        document.title = 'typst-notes srs';
         document.getElementById('due-pill').textContent = done + '/' + total;
         document.getElementById('progress-fill').style.width = (total === 0 ? 0 : (done / total) * 100) + '%';
       }
@@ -567,18 +400,16 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
         const actions = document.getElementById('action-row');
         updateStats();
 
-        if (!currentDeck || sessionQueue.length === 0 || sessionIndex >= sessionQueue.length) {
+        if (sessionQueue.length === 0 || sessionIndex >= sessionQueue.length) {
           currentCard = null;
           showingAnswer = false;
           frame.innerHTML = '<div class="empty-state srs-empty">Done</div>';
           actions.innerHTML = '';
-          renderZoomUi();
           return;
         }
 
         currentCard = sessionQueue[sessionIndex];
         showingAnswer = false;
-        setZoom(1);
         renderCard('question');
         actions.innerHTML = '<button class="action-btn show" id="show-answer">Show Answer</button>';
         document.getElementById('show-answer').addEventListener('click', showAnswer);
@@ -617,12 +448,6 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
         if (event.key === ' ' && !showingAnswer && currentCard) {
           event.preventDefault();
           showAnswer();
-        } else if (event.key === '+' || event.key === '=') {
-          setZoom(zoomLevel + ZOOM_STEP);
-        } else if (event.key === '-') {
-          setZoom(zoomLevel - ZOOM_STEP);
-        } else if (event.key === '0') {
-          setZoom(1);
         } else if (showingAnswer) {
           if (event.key === '1') rateCard(1);
           if (event.key === '2') rateCard(3);
@@ -631,22 +456,11 @@ function renderSrsHtml(deckFilter: string | null, showAll: boolean, cramMode: bo
         }
       });
 
-      deckSelect.addEventListener('change', () => {
-        currentDeck = deckSelect.value;
-        startSession();
-      });
-
       frame.addEventListener('click', () => {
         if (!showingAnswer && currentCard) {
           showAnswer();
         }
       });
-
-      zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel - ZOOM_STEP));
-      zoomInBtn.addEventListener('click', () => setZoom(zoomLevel + ZOOM_STEP));
-      zoomResetBtn.addEventListener('click', () => setZoom(1));
-
-      renderZoomUi();
 
       loadData();
     `,
@@ -658,11 +472,13 @@ export function printSrsHelp() {
 typst-notes srs
 
 Usage:
-  typst-notes srs [--deck=NAME] [--all] [--cram] [--port=3000]
+  typst-notes srs [--deck=NAME[,NAME...]] [--ignore=NAME[,NAME...]] [--all] [--cram] [--port=3000]
 
 Examples:
   typst-notes srs
   typst-notes srs --deck=oose
+  typst-notes srs --deck=oose,algorithms
+  typst-notes srs --ignore=oose
   typst-notes srs --all
   typst-notes srs --cram
 `);
@@ -672,6 +488,17 @@ function getArg(args: string[], prefix: string): string | undefined {
   return args.find((arg) => arg.startsWith(prefix))?.split("=")[1];
 }
 
+function parseDeckList(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name, index, list) => name.length > 0 && list.indexOf(name) === index);
+}
+
 export async function startSrsServer(args: string[]) {
   if (args.includes("--help") || args.includes("-h")) {
     printSrsHelp();
@@ -679,15 +506,37 @@ export async function startSrsServer(args: string[]) {
   }
 
   const port = parseInt(getArg(args, "--port=") || "3000", 10);
-  const deckFilter = getArg(args, "--deck=") || null;
+  const includeDecks = parseDeckList(getArg(args, "--deck="));
+  const ignoreDecks = parseDeckList(getArg(args, "--ignore="));
   const cramMode = args.includes("--cram");
   const showAll = args.includes("--all") || cramMode;
-  const decks = await discoverFlashcards();
+  const discoveredDecks = await discoverFlashcards();
   const progress = await loadProgress();
+  const knownDeckNames = new Set(discoveredDecks.keys());
 
-  if (deckFilter && !decks.has(deckFilter)) {
-    console.error(`Deck \"${deckFilter}\" not found.`);
+  const unknownIncluded = includeDecks.filter((name) => !knownDeckNames.has(name));
+  if (unknownIncluded.length > 0) {
+    console.error(`Deck(s) not found in --deck: ${unknownIncluded.join(", ")}`);
     process.exit(1);
+  }
+
+  const unknownIgnored = ignoreDecks.filter((name) => !knownDeckNames.has(name));
+  if (unknownIgnored.length > 0) {
+    console.error(`Deck(s) not found in --ignore: ${unknownIgnored.join(", ")}`);
+    process.exit(1);
+  }
+
+  const includeSet = new Set(includeDecks);
+  const ignoreSet = new Set(ignoreDecks);
+  const decks = new Map<string, Flashcard[]>();
+  for (const [deck, cards] of discoveredDecks) {
+    if (includeSet.size > 0 && !includeSet.has(deck)) {
+      continue;
+    }
+    if (ignoreSet.has(deck)) {
+      continue;
+    }
+    decks.set(deck, cards);
   }
 
   const cardLookup = new Map<string, Flashcard>();
@@ -729,7 +578,7 @@ export async function startSrsServer(args: string[]) {
       const url = new URL(req.url);
 
       if (url.pathname === "/" || url.pathname === "/index.html") {
-        return new Response(renderSrsHtml(deckFilter, showAll, cramMode), {
+        return new Response(renderSrsHtml(showAll), {
           headers: { "Content-Type": "text/html" },
         });
       }

@@ -24,6 +24,7 @@ Examples:
   typst-notes preview oose/state.typ
   typst-notes preview --follow
   typst-notes srs --deck=oose --all
+  typst-notes srs --deck=oose,algorithms --ignore=archived
   typst-notes srs --cram
   typst-notes graph
   typst-notes lsp
