@@ -13,6 +13,8 @@
   body
 }
 
+#let scope = (diagram: diagram, edge: edge, node: node)
+
 #let card_id = sys.inputs.at("card_id", default: none)
 #let question_or_answer = sys.inputs.at("question_or_answer", default: false)
 
@@ -28,6 +30,6 @@
     radius: 4pt, 
     stroke: 0.5pt + gray,
     width: 100%,
-    [#heading([#eval(q, mode: "markup", scope: (diagram: diagram, edge: edge, node:node))]) \ #eval(a, mode: "markup", scope: (diagram: diagram, edge: edge, node:node))]
+    [#heading([#eval(q, mode: "markup", scope: scope)]) \ #eval(a, mode: "markup", scope: scope)]
   )
 }

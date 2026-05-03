@@ -203,7 +203,7 @@ function renderTypstSource(content: string): string {
 #import "setup.typ": *
 #show: setup.with()
 
-#eval("${content.replace(/\\/g, "\\\\").replace(/\"/g, '\\\"').replace(/\n/g, "\\n")}", mode: "markup", scope: (diagram: diagram, edge: edge, node: node))
+#eval("${content.replace(/\\/g, "\\\\").replace(/\"/g, '\\\"').replace(/\n/g, "\\n")}", mode: "markup", scope: scope)
 `;
 }
 
