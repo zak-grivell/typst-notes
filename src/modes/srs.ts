@@ -292,7 +292,6 @@ function renderSrsHtml(showAll: boolean) {
           <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
           <div class="card-frame" id="card-frame"><div class="empty-state">Loading...</div></div>
           <div class="action-row" id="action-row"></div>
-          <div class="hint" id="hint">Tap card or <span class="kbd">Space</span> to reveal · <span class="kbd">1</span> again <span class="kbd">2</span> hard <span class="kbd">3</span> good <span class="kbd">4</span> easy</div>
         </div>
       </section>
     </main>`,
